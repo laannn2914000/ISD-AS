@@ -11,7 +11,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   // Lấy URL Backend từ biến môi trường (Vercel) hoặc mặc định localhost
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
