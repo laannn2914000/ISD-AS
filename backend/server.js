@@ -9,10 +9,18 @@ const app = express();
 
 // 1. CẤU HÌNH CORS CHI TIẾT
 const corsOptions = {
-  origin: [
-    "http://localhost:5173", // URL mặc định của Vite
-    "http://isd-as.vercel.app", // THAY THẾ bằng URL Vercel thật của bạn
-  ],
+  origin: function (origin, callback) {
+    // Cho phép localhost hoặc bất kỳ domain nào của vercel.app từ tài khoản của bạn
+    if (
+      !origin ||
+      origin.startsWith("http://localhost") ||
+      origin.includes("vercel.app")
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
   optionsSuccessStatus: 200,
