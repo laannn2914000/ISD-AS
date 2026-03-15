@@ -11,7 +11,7 @@ const app = express();
 const corsOptions = {
   origin: [
     "http://localhost:5173", // URL mặc định của Vite
-    "isd-as.vercel.app", // THAY THẾ bằng URL Vercel thật của bạn
+    "http://isd-as.vercel.app", // THAY THẾ bằng URL Vercel thật của bạn
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
