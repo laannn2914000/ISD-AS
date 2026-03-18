@@ -94,6 +94,82 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+// 1. Định nghĩa Schema cho Chứng từ
+const Document = mongoose.model(
+  "Document",
+  new mongoose.Schema({
+    docId: String,
+    department: String,
+    creator: String,
+    status: String,
+    createdAt: { type: Date, default: Date.now },
+  }),
+);
+
+// 2. Định nghĩa Schema cho Phê duyệt
+const Approval = mongoose.model(
+  "Approval",
+  new mongoose.Schema({
+    name: String,
+    department: String,
+    amount: String,
+    sender: String,
+  }),
+);
+
+// 3. Route lấy dữ liệu tổng hợp cho Dashboard
+app.get("/api/dashboard-stats", async (req, res) => {
+  try {
+    const docs = await Document.find().sort({ createdAt: -1 }).limit(5);
+    const approvals = await Approval.find();
+
+    // Gửi dữ liệu về Frontend
+    res.json({
+      recentDocuments: docs,
+      approvalRequests: approvals,
+      stats: {
+        totalDocs: 1245, // Bạn có thể dùng Document.countDocuments()
+        pendingReports: 18,
+        receivable: "485M",
+        payable: "298M",
+      },
+    });
+  } catch (error) {
+    res.status(500).send("Lỗi lấy dữ liệu dashboard");
+  }
+});
+
+// Route lấy thống kê dành riêng cho nhân viên
+app.get("/api/employee-stats/:email", async (req, res) => {
+  try {
+    const email = req.params.email;
+    const myDocs = await Document.find({ creatorEmail: email })
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    res.json({
+      recentReports: myDocs,
+      stats: {
+        totalMyDocs: await Document.countDocuments({ creatorEmail: email }),
+        approvedDocs: await Document.countDocuments({
+          creatorEmail: email,
+          status: "Đã duyệt",
+        }),
+        pendingDocs: await Document.countDocuments({
+          creatorEmail: email,
+          status: "Chờ duyệt",
+        }),
+        rejectedDocs: await Document.countDocuments({
+          creatorEmail: email,
+          status: "Từ chối",
+        }),
+      },
+    });
+  } catch (error) {
+    res.status(500).send("Lỗi lấy dữ liệu nhân viên");
+  }
+});
+
 // 5. ROUTE KIỂM TRA TRẠNG THÁI SERVER (Dùng để Render không bị tắt)
 app.get("/ping", (req, res) => {
   res.status(200).send("Server is alive!");
