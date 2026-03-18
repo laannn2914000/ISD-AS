@@ -32,6 +32,7 @@ import {
 const EmployeeDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showLogoutModal, setShowLogoutModal] = useState(false); // Thêm state quản lý modal
 
   // Lấy thông tin user từ localStorage sau khi đăng nhập thành công
   const user = JSON.parse(localStorage.getItem("user")) || {
@@ -44,7 +45,6 @@ const EmployeeDashboard = () => {
   useEffect(() => {
     const fetchEmployeeData = async () => {
       try {
-        // Gọi API lấy dữ liệu thống kê của nhân viên
         const res = await axios.get(
           `${API_URL}/api/employee-stats/${user.email}`,
         );
@@ -58,7 +58,8 @@ const EmployeeDashboard = () => {
     fetchEmployeeData();
   }, [user.email, API_URL]);
 
-  const handleLogout = () => {
+  // Hàm xử lý đăng xuất thực tế
+  const confirmLogout = () => {
     localStorage.clear();
     window.location.href = "/login";
   };
@@ -72,9 +73,9 @@ const EmployeeDashboard = () => {
     );
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans">
+    <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans relative">
       {/* SIDEBAR */}
-      <aside className="w-[280px] bg-white border-r border-gray-100 p-6 flex flex-col">
+      <aside className="w-[280px] bg-white border-r border-gray-100 p-6 flex flex-col text-left">
         <div className="flex items-center gap-3 mb-10 px-2">
           <div className="w-10 h-10 bg-[#0061f2] rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
             G
@@ -99,8 +100,9 @@ const EmployeeDashboard = () => {
           <NavItem icon={<User size={20} />} label="Thông tin cá nhân" />
         </nav>
 
+        {/* Nút đăng xuất mở Pop-up */}
         <button
-          onClick={handleLogout}
+          onClick={() => setShowLogoutModal(true)}
           className="flex items-center gap-3 text-red-500 p-4 hover:bg-red-50 rounded-xl transition-all mt-auto font-semibold active:scale-95"
         >
           <LogOut size={20} /> Đăng xuất
@@ -108,9 +110,8 @@ const EmployeeDashboard = () => {
       </aside>
 
       <div className="flex-1 overflow-y-auto">
-        {/* --- HEADER (Hàng trên cùng) --- */}
+        {/* HEADER */}
         <header className="h-[88px] bg-white border-b border-gray-100 flex items-center px-10 sticky top-0 z-10 shadow-[0_2px_10px_rgba(0,0,0,0.01)]">
-          {/* 1. Thanh Search dài ở phía bên trái */}
           <div className="relative flex-1 max-w-2xl">
             <Search
               className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"
@@ -123,17 +124,14 @@ const EmployeeDashboard = () => {
             />
           </div>
 
-          {/* 2. Cụm Icon và Profile ở bên phải */}
           <div className="flex items-center gap-6 ml-auto">
             <div className="relative p-2 text-gray-400 hover:text-[#0061f2] hover:bg-blue-50 rounded-full cursor-pointer transition-colors">
               <Bell size={22} />
               <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
             </div>
 
-            {/* Component Profile: Định dạng đúng như ảnh */}
-            <div className="flex items-center gap-4 pl-6 border-l border-gray-100 h-10">
+            <div className="flex items-center gap-4 pl-6 border-l border-gray-100 h-10 text-left">
               <div className="text-right">
-                {/* Thay tên bằng User */}
                 <p className="text-base font-bold text-gray-800 leading-tight">
                   User
                 </p>
@@ -141,7 +139,6 @@ const EmployeeDashboard = () => {
                   {user.role}
                 </p>
               </div>
-              {/* Icon VK: Thay thế bằng ảnh đại diện hoặc chữ cái đầu */}
               <div className="w-12 h-12 bg-[#0061f2] rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md border-2 border-white">
                 {user.fullName.split(" ").pop().charAt(0).toUpperCase()}
               </div>
@@ -150,10 +147,8 @@ const EmployeeDashboard = () => {
         </header>
 
         {/* MAIN CONTENT AREA */}
-        <main className="p-10 space-y-8">
-          {/* --- HÀNG TỰA ĐỀ VÀ NÚT TẠO (Phía trên cùng của Main) --- */}
+        <main className="p-10 space-y-8 text-left">
           <div className="flex justify-between items-start">
-            {/* 1. Tiêu đề: Nằm phía trái trên box tổng báo cáo */}
             <section>
               <h2 className="text-3xl font-extrabold text-[#0f172a] tracking-tight">
                 Dashboard
@@ -163,14 +158,12 @@ const EmployeeDashboard = () => {
               </p>
             </section>
 
-            {/* 2. Box Tạo báo cáo: Nằm phía phải trên box công nợ */}
             <button className="flex items-center gap-2.5 px-6 py-3.5 bg-[#0061f2] text-white rounded-2xl font-bold text-base hover:bg-[#0052cc] transition-all shadow-lg active:scale-95">
               <Plus size={20} strokeWidth={3} />
               Tạo báo cáo mới
             </button>
           </div>
 
-          {/* STAT CARDS - Thẻ thông số tập trung vào nhân viên */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
               icon={<FileSearch className="text-[#0061f2]" />}
@@ -207,7 +200,6 @@ const EmployeeDashboard = () => {
             />
           </div>
 
-          {/* BIỂU ĐỒ HOẠT ĐỘNG */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm transition-shadow hover:shadow-md">
               <div className="flex justify-between items-center mb-6">
@@ -270,7 +262,6 @@ const EmployeeDashboard = () => {
               </div>
             </div>
 
-            {/* BÁO CÁO GẦN ĐÂY NHẤT */}
             <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm transition-shadow hover:shadow-md">
               <h3 className="font-bold text-gray-800 text-lg mb-6">
                 Báo cáo gần đây
@@ -318,6 +309,35 @@ const EmployeeDashboard = () => {
           </div>
         </main>
       </div>
+
+      {/* POP-UP XÁC NHẬN ĐĂNG XUẤT */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut size={28} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800">Xác nhận đăng xuất</h3>
+            <p className="text-sm text-gray-400 mt-2 leading-relaxed">
+              Bạn muốn đăng xuất đúng không?
+            </p>
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all active:scale-95"
+              >
+                Trở lại
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg shadow-red-200 hover:bg-red-600 transition-all active:scale-95"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -338,7 +358,6 @@ const StatCard = ({ icon, bg, label, value, sub, trend, trendColor = "text-green
         <p className="text-xs text-gray-400 font-semibold mb-1 uppercase tracking-tight">{label}</p>
         <p className="text-3xl font-extrabold text-[#0f172a]">{value}</p>
       </div>
-      {/* Kiểm tra icon trước khi render để tránh lỗi undefined */}
       <div className={`${bg} w-12 h-12 rounded-2xl flex items-center justify-center`}>
         {icon ? icon : <div className="w-5 h-5 bg-gray-200 animate-pulse" />}
       </div>
@@ -347,7 +366,6 @@ const StatCard = ({ icon, bg, label, value, sub, trend, trendColor = "text-green
         <p className="text-[10px] text-gray-400 font-medium">{sub}</p>
         {trend && (
             <div className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 ${trendColor} bg-opacity-10 rounded-full`}>
-                {/* Sử dụng check an toàn cho icon trend */}
                 {trend.startsWith('+') ? <TrendingUp size={14}/> : <Clock size={14}/>} 
                 {trend}
             </div>

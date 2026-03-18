@@ -31,6 +31,7 @@ import {
 const ManagerDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showLogoutModal, setShowLogoutModal] = useState(false); // State điều khiển modal
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -45,7 +46,6 @@ const ManagerDashboard = () => {
   useEffect(() => {
     const fetchManagerData = async () => {
       try {
-        // Quản lý dùng chung API tổng quát để theo dõi hệ thống
         const res = await axios.get(`${API_URL}/api/dashboard-stats`);
         setData(res.data);
       } catch (err) {
@@ -57,7 +57,8 @@ const ManagerDashboard = () => {
     fetchManagerData();
   }, [API_URL]);
 
-  const handleLogout = () => {
+  // Hàm thực hiện đăng xuất
+  const confirmLogout = () => {
     localStorage.clear();
     window.location.href = "/";
   };
@@ -73,8 +74,8 @@ const ManagerDashboard = () => {
     );
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans">
-      {/* SIDEBAR - Tích hợp điều hướng */}
+    <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans relative">
+      {/* SIDEBAR */}
       <aside className="w-[280px] bg-white border-r border-gray-100 p-6 flex flex-col">
         <div className="flex items-center gap-3 mb-10 px-2">
           <div className="w-10 h-10 bg-[#0061f2] rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
@@ -88,7 +89,7 @@ const ManagerDashboard = () => {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-1 text-left">
           <NavItem
             icon={<LayoutDashboard size={20} />}
             label="Dashboard"
@@ -112,8 +113,9 @@ const ManagerDashboard = () => {
           <NavItem icon={<Settings size={20} />} label="Cài đặt hệ thống" />
         </nav>
 
+        {/* Nút đăng xuất kích hoạt Modal */}
         <button
-          onClick={handleLogout}
+          onClick={() => setShowLogoutModal(true)}
           className="flex items-center gap-3 text-red-500 p-4 hover:bg-red-50 rounded-xl transition-all mt-auto font-semibold active:scale-95"
         >
           <LogOut size={20} /> Đăng xuất
@@ -121,7 +123,7 @@ const ManagerDashboard = () => {
       </aside>
 
       <div className="flex-1 overflow-y-auto">
-        {/* HEADER - Thiết kế tinh gọn */}
+        {/* HEADER */}
         <header className="h-[88px] bg-white border-b border-gray-100 flex items-center px-10 sticky top-0 z-10 shadow-sm">
           <div className="relative flex-1 max-w-2xl text-left">
             <Search
@@ -146,7 +148,6 @@ const ManagerDashboard = () => {
                   {user.role}
                 </p>
               </div>
-              {/* Avatar hiển thị tên viết tắt */}
               <div className="w-12 h-12 bg-[#0061f2] rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white shadow-md">
                 {user.fullName
                   ? user.fullName.split(" ").pop().charAt(0).toUpperCase()
@@ -173,7 +174,6 @@ const ManagerDashboard = () => {
             </button>
           </div>
 
-          {/* STAT CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
               icon={<FileSearch className="text-[#0061f2]" />}
@@ -209,7 +209,6 @@ const ManagerDashboard = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* FINANCIAL CHART */}
             <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
               <h3 className="font-bold text-gray-800 text-lg mb-6">
                 Financial Overview
@@ -257,24 +256,15 @@ const ManagerDashboard = () => {
               </div>
             </div>
 
-            {/* RECENT DOCUMENTS */}
             <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-              <h3 className="font-bold text-gray-800 text-lg mb-6">
+              <h3 className="font-bold text-gray-800 text-lg mb-6 text-left">
                 Chứng từ mới cập nhật
               </h3>
               <div className="space-y-5">
                 {(
                   data?.recentDocuments || [
-                    {
-                      docId: "DOC-1021",
-                      department: "Accounting",
-                      status: "Chờ duyệt",
-                    },
-                    {
-                      docId: "DOC-1022",
-                      department: "Sales",
-                      status: "Đã duyệt",
-                    },
+                    { docId: "DOC-1021", department: "Accounting", status: "Chờ duyệt" },
+                    { docId: "DOC-1022", department: "Sales", status: "Đã duyệt" },
                     { docId: "DOC-1023", department: "HR", status: "Từ chối" },
                   ]
                 ).map((doc, i) => (
@@ -307,6 +297,35 @@ const ManagerDashboard = () => {
           </div>
         </main>
       </div>
+
+      {/* POP-UP XÁC NHẬN ĐĂNG XUẤT */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut size={28} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 text-center">Xác nhận đăng xuất</h3>
+            <p className="text-sm text-gray-400 mt-2 leading-relaxed text-center">
+              Bạn muốn đăng xuất đúng không?
+            </p>
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all active:scale-95"
+              >
+                Trở lại
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg shadow-red-200 hover:bg-red-600 transition-all active:scale-95"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -368,18 +387,12 @@ const getStatusColor = (s) => {
 };
 
 const chartData = [
-  { name: "Jan", value: 45 },
-  { name: "Feb", value: 52 },
-  { name: "Mar", value: 48 },
-  { name: "Apr", value: 62 },
-  { name: "May", value: 55 },
-  { name: "Jun", value: 68 },
-  { name: "Jul", value: 58 },
-  { name: "Aug", value: 65 },
-  { name: "Sep", value: 71 },
-  { name: "Oct", value: 66 },
-  { name: "Nov", value: 73 },
-  { name: "Dec", value: 80 },
+  { name: "Jan", value: 45 }, { name: "Feb", value: 52 },
+  { name: "Mar", value: 48 }, { name: "Apr", value: 62 },
+  { name: "May", value: 55 }, { name: "Jun", value: 68 },
+  { name: "Jul", value: 58 }, { name: "Aug", value: 65 },
+  { name: "Sep", value: 71 }, { name: "Oct", value: 66 },
+  { name: "Nov", value: 73 }, { name: "Dec", value: 80 },
 ];
 
 export default ManagerDashboard;
