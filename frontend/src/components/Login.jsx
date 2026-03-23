@@ -4,17 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  // THAY ĐỔI 1: Đổi tên state từ email -> account để khớp với Backend (const { account, password } = req.body)
+  const [account, setAccount] = useState(""); 
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState(""); 
   const navigate = useNavigate();
 
-  // Quản lý các bước: 'login' | 'forgot' | 'otp' | 'reset'
   const [view, setView] = useState("login");
   
-  // States cho Quên mật khẩu
   const [forgotEmail, setForgotEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [timer, setTimer] = useState(30);
@@ -22,9 +21,8 @@ const Login = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [resetError, setResetError] = useState("");
 
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  // Xử lý đếm ngược OTP
   useEffect(() => {
     let interval;
     if (view === "otp" && timer > 0) {
@@ -38,21 +36,22 @@ const Login = () => {
     setLoading(true);
     setLoginError("");
     try {
-      const response = await axios.post(`${API_URL}/api/login`, { email, password });
+      // THAY ĐỔI 2: Gửi trường 'account' thay vì 'email'
+      const response = await axios.post(`${API_URL}/api/login`, { account, password });
+      
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
       navigate("/dashboard");
     } catch (err) {
-      setLoginError("Sai tài khoản hoặc mật khẩu!");
+      // Hiển thị lỗi từ server trả về (ví dụ: "Tài khoản bị khóa" hoặc "Sai mật khẩu")
+      setLoginError(err.response?.data?.message || "Sai tài khoản hoặc mật khẩu!");
     } finally {
       setLoading(false);
     }
   };
 
-  // Bước 1: Gửi yêu cầu quên mật khẩu
   const handleSendOTP = (e) => {
     e.preventDefault();
-    // Giả lập kiểm tra email (Ví dụ email phải có @)
     if (!forgotEmail.includes("@")) {
       setResetError("Email không tồn tại trong hệ thống!");
       return;
@@ -62,7 +61,6 @@ const Login = () => {
     setView("otp");
   };
 
-  // Bước 2: Xác nhận OTP (Mặc định 123456)
   const handleVerifyOTP = (e) => {
     e.preventDefault();
     if (timer === 0) {
@@ -77,7 +75,6 @@ const Login = () => {
     }
   };
 
-  // Bước 3: Đặt lại mật khẩu
   const handleResetPassword = (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
@@ -91,7 +88,7 @@ const Login = () => {
 
   return (
     <div className="flex h-screen w-full bg-white font-sans overflow-hidden">
-      {/* CỘT TRÁI: BANNER (GIỮ NGUYÊN) */}
+      {/* CỘT TRÁI: BANNER - GIỮ NGUYÊN THIẾT KẾ CỦA BẠN */}
       <div className="hidden lg:flex flex-col justify-center w-[60%] bg-gradient-to-tr from-[#0052cc] via-[#0061f2] to-[#0074e4] p-32 text-white relative text-left">
         <div className="z-10 -mt-20">
           <h1 className="text-6xl font-bold mb-4 tracking-tight">Kế Toán Bách Mỹ</h1>
@@ -106,7 +103,7 @@ const Login = () => {
         <div className="absolute -bottom-48 -left-10 w-[500px] h-[500px] border border-white/20 rounded-full"></div>
       </div>
 
-      {/* CỘT PHẢI: FORM */}
+      {/* CỘT PHẢI: FORM - GIỮ NGUYÊN THIẾT KẾ CỦA BẠN */}
       <div className="w-full lg:w-[40%] flex flex-col justify-center items-center px-16 lg:px-24 text-left">
         <div className="w-full max-w-sm">
           
@@ -120,11 +117,25 @@ const Login = () => {
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <input type="text" placeholder="Email/Số điện thoại" className="w-full px-8 py-4.5 border border-gray-100 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.03)] outline-none focus:ring-1 focus:ring-[#0061f2] text-gray-700" onChange={(e) => setEmail(e.target.value)} required />
+                  <input 
+                    type="text" 
+                    placeholder="Email/Số điện thoại" 
+                    className="w-full px-8 py-4.5 border border-gray-100 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.03)] outline-none focus:ring-1 focus:ring-[#0061f2] text-gray-700" 
+                    value={account} // Liên kết với state account
+                    onChange={(e) => setAccount(e.target.value)} 
+                    required 
+                  />
                 </div>
 
                 <div className="relative">
-                  <input type={showPassword ? "text" : "password"} placeholder="Mật khẩu" className="w-full px-8 py-4.5 border border-gray-100 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.03)] outline-none focus:ring-1 focus:ring-[#0061f2] text-gray-700" onChange={(e) => setPassword(e.target.value)} required />
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="Mật khẩu" 
+                    className="w-full px-8 py-4.5 border border-gray-100 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.03)] outline-none focus:ring-1 focus:ring-[#0061f2] text-gray-700" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)} 
+                    required 
+                  />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500">
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
@@ -145,7 +156,7 @@ const Login = () => {
             </>
           )}
 
-          {/* 2. QUÊN MẬT KHẨU */}
+          {/* CÁC PHẦN FORGOT, OTP, RESET (GIỮ NGUYÊN) */}
           {view === "forgot" && (
             <div className="animate-in fade-in duration-300">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">Quên mật khẩu?</h2>
@@ -161,7 +172,6 @@ const Login = () => {
             </div>
           )}
 
-          {/* 3. NHẬP OTP (Mặc định 123456) */}
           {view === "otp" && (
             <div className="animate-in fade-in duration-300">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">Xác thực OTP</h2>
@@ -177,7 +187,6 @@ const Login = () => {
             </div>
           )}
 
-          {/* 4. ĐẶT LẠI MẬT KHẨU */}
           {view === "reset" && (
             <div className="animate-in fade-in duration-300">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">Mật khẩu mới</h2>

@@ -1,27 +1,21 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const app = express();
 
-// 1. CẤU HÌNH CORS CHI TIẾT
+// 1. CẤU HÌNH CORS
 const corsOptions = {
   origin: function (origin, callback) {
-    // Cho phép localhost hoặc bất kỳ domain nào của vercel.app từ tài khoản của bạn
-    if (
-      !origin ||
-      origin.startsWith("http://localhost") ||
-      origin.includes("vercel.app")
-    ) {
+    if (!origin || origin.startsWith("http://localhost") || origin.includes("vercel.app")) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,
   optionsSuccessStatus: 200,
 };
@@ -29,154 +23,154 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// 2. KẾT NỐI DATABASE (Dùng MongoDB Atlas cho thực tế)
+// 2. KẾT NỐI DATABASE
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ GoFinance Database connected successfully"))
   .catch((err) => console.error("❌ Database connection error:", err));
 
-// 3. ĐỊNH NGHĨA MODEL NGƯỜI DÙNG
+// 3. ĐỊNH NGHĨA MODEL NGƯỜI DÙNG (Lưu mật khẩu thô)
 const User = mongoose.model(
   "User",
   new mongoose.Schema({
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    phone: { type: String, required: true, unique: true },
+    password: { type: String, required: true }, // Lưu trực tiếp chuỗi văn bản
     fullName: String,
+    dept: String,
+    isLocked: { type: Boolean, default: false },
     role: {
       type: String,
-      enum: ["admin", "quản lý", "nhân viên"],
+      enum: ["admin", "manager", "nhân viên"], 
       default: "nhân viên",
     },
-  }),
+  }, { timestamps: true })
 );
 
-// 4. ROUTE ĐĂNG NHẬP
+// 4. ROUTE ĐĂNG NHẬP (So sánh chuỗi trực tiếp)
 app.post("/api/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { account, password } = req.body;
 
   try {
-    // Tìm người dùng theo Email
-    const user = await User.findOne({ email });
+    // Tìm theo email HOẶC phone
+    const user = await User.findOne({
+      $or: [{ email: account }, { phone: account }]
+    });
+
     if (!user) {
-      return res
-        .status(400)
-        .json({ message: "Email không tồn tại trong hệ thống!" });
+      return res.status(400).json({ message: "Tài khoản không tồn tại!" });
     }
 
-    // So sánh mật khẩu băm (bcrypt)
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    // Kiểm tra trạng thái khóa
+    if (user.isLocked) {
+      return res.status(403).json({ message: "Tài khoản đã bị khóa!" });
+    }
+
+    // SO SÁNH MẬT KHẨU TRỰC TIẾP (KHÔNG DÙNG BCRYPT)
+    if (user.password !== password) {
       return res.status(400).json({ message: "Mật khẩu không chính xác!" });
     }
 
-    // Tạo JWT Token
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "24h" },
+      { expiresIn: "24h" }
     );
 
-    // Trả về dữ liệu thành công
     res.status(200).json({
       message: "Đăng nhập thành công",
       token,
       user: {
+        id: user._id,
         fullName: user.fullName,
         role: user.role,
         email: user.email,
+        phone: user.phone
       },
     });
   } catch (error) {
-    console.error("Lỗi đăng nhập hệ thống:", error);
-    res
-      .status(500)
-      .json({ message: "Lỗi máy chủ nội bộ! Vui lòng thử lại sau." });
+    res.status(500).json({ message: "Lỗi máy chủ!" });
   }
 });
 
-// 1. Định nghĩa Schema cho Chứng từ
-const Document = mongoose.model(
-  "Document",
-  new mongoose.Schema({
-    docId: String,
-    department: String,
-    creator: String,
-    status: String,
-    createdAt: { type: Date, default: Date.now },
-  }),
-);
+// --- QUẢN LÝ NHÂN VIÊN ---
 
-// 2. Định nghĩa Schema cho Phê duyệt
-const Approval = mongoose.model(
-  "Approval",
-  new mongoose.Schema({
-    name: String,
-    department: String,
-    amount: String,
-    sender: String,
-  }),
-);
-
-// 3. Route lấy dữ liệu tổng hợp cho Dashboard
-app.get("/api/dashboard-stats", async (req, res) => {
+// Lấy danh sách
+app.get("/api/users", async (req, res) => {
   try {
-    const docs = await Document.find().sort({ createdAt: -1 }).limit(5);
-    const approvals = await Approval.find();
-
-    // Gửi dữ liệu về Frontend
-    res.json({
-      recentDocuments: docs,
-      approvalRequests: approvals,
-      stats: {
-        totalDocs: 1245, // Bạn có thể dùng Document.countDocuments()
-        pendingReports: 18,
-        receivable: "485M",
-        payable: "298M",
-      },
-    });
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
+    res.json(users);
   } catch (error) {
-    res.status(500).send("Lỗi lấy dữ liệu dashboard");
+    res.status(500).json({ message: error.message });
   }
 });
 
-// Route lấy thống kê dành riêng cho nhân viên
-app.get("/api/employee-stats/:email", async (req, res) => {
+// Thêm mới (Mật khẩu lưu thô)
+app.post("/api/users/register", async (req, res) => {
   try {
-    const email = req.params.email;
-    const myDocs = await Document.find({ creatorEmail: email })
-      .sort({ createdAt: -1 })
-      .limit(5);
+    const { name, email, phone, dept, role, password } = req.body;
 
-    res.json({
-      recentReports: myDocs,
-      stats: {
-        totalMyDocs: await Document.countDocuments({ creatorEmail: email }),
-        approvedDocs: await Document.countDocuments({
-          creatorEmail: email,
-          status: "Đã duyệt",
-        }),
-        pendingDocs: await Document.countDocuments({
-          creatorEmail: email,
-          status: "Chờ duyệt",
-        }),
-        rejectedDocs: await Document.countDocuments({
-          creatorEmail: email,
-          status: "Từ chối",
-        }),
-      },
+    const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email hoặc Số điện thoại đã tồn tại!" });
+    }
+
+    const newUser = new User({
+      fullName: name,
+      email,
+      phone,
+      dept,
+      role,
+      password: password || "123456", // Lưu trực tiếp
+      isLocked: false
     });
+
+    await newUser.save();
+    res.status(201).json(newUser);
   } catch (error) {
-    res.status(500).send("Lỗi lấy dữ liệu nhân viên");
+    res.status(400).json({ message: error.message });
   }
 });
 
-// 5. ROUTE KIỂM TRA TRẠNG THÁI SERVER (Dùng để Render không bị tắt)
-app.get("/ping", (req, res) => {
-  res.status(200).send("Server is alive!");
+// Cập nhật
+app.put("/api/users/:id", async (req, res) => {
+  try {
+    const { name, email, phone, dept, role } = req.body;
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { fullName: name, email, phone, dept, role },
+      { new: true }
+    );
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(400).json({ message: "Lỗi cập nhật" });
+  }
 });
 
-// 6. KHỞI CHẠY SERVER
+// Xóa
+app.delete("/api/users/:id", async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: "Xóa thành công" });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi xóa" });
+  }
+});
+
+// Khóa/Mở khóa
+app.patch("/api/users/toggle-lock/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "Không tìm thấy" });
+    user.isLocked = !user.isLocked;
+    await user.save();
+    res.json({ message: "Thao tác thành công", isLocked: user.isLocked });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi thao tác" });
+  }
+});
+
+app.get("/ping", (req, res) => res.status(200).send("Server is alive!"));
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 GoFinance Server is running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

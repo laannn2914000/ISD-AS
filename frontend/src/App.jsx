@@ -9,6 +9,7 @@ import Dashboard from "./components/Dashboard";
 import EmployeeDashboard from "./components/EmployeeDashboard";
 import ManagerDashboard from "./components/ManagerDashboard";
 import EmployeeManagement from "./components/EmployeeManagement";
+import ManagerEmployeeManagement from "./components/ManagerEmployeeManagement";
 
 // 1. Cải tiến ProtectedRoute: Kiểm tra cả Token và User object
 const ProtectedRoute = ({ children }) => {
@@ -58,11 +59,22 @@ function App() {
           }
         />
 
+        {/* Trang quản lý của ADMIN (Quản lý Manager) */}
         <Route
           path="/employee-management"
           element={
             <ProtectedRoute>
               <EmployeeManagement />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* TRANG MỚI THÊM: Quản lý của MANAGER (Quản lý User/Nhân viên) */}
+        <Route
+          path="/manager-employee-management"
+          element={
+            <ProtectedRoute>
+              <ManagerEmployeeManagement />
             </ProtectedRoute>
           }
         />
