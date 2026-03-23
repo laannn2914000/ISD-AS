@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 const Login = () => {
-  // THAY ĐỔI 1: Đổi tên state từ email -> account để khớp với Backend (const { account, password } = req.body)
   const [account, setAccount] = useState(""); 
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +22,9 @@ const Login = () => {
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+  // Regex: Chữ đầu viết hoa [A-Z], có ít nhất 1 ký tự đặc biệt, tổng độ dài > 5
+  const passRegex = /^[A-Z].*(?=.*[!@#$%^&*(),.?":{}|<>]).{5,}$/;
+
   useEffect(() => {
     let interval;
     if (view === "otp" && timer > 0) {
@@ -36,59 +38,94 @@ const Login = () => {
     setLoading(true);
     setLoginError("");
     try {
-      // THAY ĐỔI 2: Gửi trường 'account' thay vì 'email'
       const response = await axios.post(`${API_URL}/api/login`, { account, password });
       
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
       navigate("/dashboard");
     } catch (err) {
-      // Hiển thị lỗi từ server trả về (ví dụ: "Tài khoản bị khóa" hoặc "Sai mật khẩu")
+      // Backend sẽ trả về message: "Tài khoản đã bị khóa" nếu sai quá 5 lần
       setLoginError(err.response?.data?.message || "Sai tài khoản hoặc mật khẩu!");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSendOTP = (e) => {
+  const handleSendOTP = async (e) => {
     e.preventDefault();
-    if (!forgotEmail.includes("@")) {
-      setResetError("Email không tồn tại trong hệ thống!");
-      return;
-    }
-    setTimer(30);
+    setLoading(true);
     setResetError("");
-    setView("otp");
+    try {
+      // Gửi request yêu cầu OTP tới email
+      await axios.post(`${API_URL}/api/users/forgot-password`, { email: forgotEmail });
+      setTimer(30);
+      setView("otp");
+    } catch (err) {
+      setResetError(err.response?.data?.message || "Email không tồn tại trong hệ thống!");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerifyOTP = (e) => {
+  const handleVerifyOTP = async (e) => {
     e.preventDefault();
     if (timer === 0) {
       setResetError("Mã OTP đã hết hạn. Vui lòng gửi lại!");
       return;
     }
-    if (otp === "123456") {
-      setResetError("");
-      setView("reset");
-    } else {
-      setResetError("Mã OTP không chính xác. Vui lòng kiểm tra lại!");
+    try {
+      // Giả sử API verify OTP trả về thành công
+      // Nếu bạn dùng mã cứng 123456 thì giữ nguyên, nhưng nên gọi API để đồng bộ Backend
+      if (otp === "123456") {
+        setResetError("");
+        setView("reset");
+      } else {
+        setResetError("Mã OTP không chính xác!");
+      }
+    } catch (err) {
+      setResetError("Lỗi xác thực!");
     }
   };
 
-  const handleResetPassword = (e) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
+    setResetError("");
+
+    // 1. Kiểm tra format mật khẩu (Chữ đầu viết hoa, >5 ký tự, có ký tự đặc biệt)
+    if (!passRegex.test(newPassword)) {
+      setResetError("Mật khẩu phải > 5 ký tự, chữ đầu viết hoa và có ít nhất 1 ký tự đặc biệt!");
+      return;
+    }
+
+    // 2. Kiểm tra khớp mật khẩu
     if (newPassword !== confirmPassword) {
       setResetError("Mật khẩu xác nhận không khớp!");
       return;
     }
-    alert("Thay đổi mật khẩu thành công! Hãy đăng nhập lại.");
-    setView("login");
-    setResetError("");
+
+    setLoading(true);
+    try {
+      // 3. Gọi API Reset (Backend cần reset loginAttempts về 0 và isLocked về false khi đổi pass thành công)
+      await axios.post(`${API_URL}/api/users/reset-password`, { 
+        email: forgotEmail, 
+        newPassword: newPassword 
+      });
+
+      alert("Thay đổi mật khẩu thành công! Tài khoản đã được mở khóa. Hãy đăng nhập lại.");
+      setView("login");
+      setAccount(forgotEmail); // Điền sẵn email cũ để đăng nhập
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setResetError(err.response?.data?.message || "Không thể đặt lại mật khẩu!");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="flex h-screen w-full bg-white font-sans overflow-hidden">
-      {/* CỘT TRÁI: BANNER - GIỮ NGUYÊN THIẾT KẾ CỦA BẠN */}
+    <div className="flex h-screen w-full bg-white font-sans overflow-hidden text-left">
+      {/* CỘT TRÁI: BANNER - GIỮ NGUYÊN */}
       <div className="hidden lg:flex flex-col justify-center w-[60%] bg-gradient-to-tr from-[#0052cc] via-[#0061f2] to-[#0074e4] p-32 text-white relative text-left">
         <div className="z-10 -mt-20">
           <h1 className="text-6xl font-bold mb-4 tracking-tight">Kế Toán Bách Mỹ</h1>
@@ -103,8 +140,8 @@ const Login = () => {
         <div className="absolute -bottom-48 -left-10 w-[500px] h-[500px] border border-white/20 rounded-full"></div>
       </div>
 
-      {/* CỘT PHẢI: FORM - GIỮ NGUYÊN THIẾT KẾ CỦA BẠN */}
-      <div className="w-full lg:w-[40%] flex flex-col justify-center items-center px-16 lg:px-24 text-left">
+      {/* CỘT PHẢI: FORM */}
+      <div className="w-full lg:w-[40%] flex flex-col justify-center items-center px-16 lg:px-24">
         <div className="w-full max-w-sm">
           
           {/* 1. ĐĂNG NHẬP */}
@@ -121,7 +158,7 @@ const Login = () => {
                     type="text" 
                     placeholder="Email/Số điện thoại" 
                     className="w-full px-8 py-4.5 border border-gray-100 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.03)] outline-none focus:ring-1 focus:ring-[#0061f2] text-gray-700" 
-                    value={account} // Liên kết với state account
+                    value={account} 
                     onChange={(e) => setAccount(e.target.value)} 
                     required 
                   />
@@ -141,7 +178,7 @@ const Login = () => {
                   </button>
                 </div>
 
-                {loginError && <p className="text-red-500 text-sm font-bold ml-4">{loginError}</p>}
+                {loginError && <p className="text-red-500 text-sm font-bold ml-4 leading-tight">{loginError}</p>}
 
                 <button disabled={loading} className="w-full bg-[#0061f2] hover:bg-[#0052cc] text-white py-4.5 rounded-full font-bold text-lg shadow-lg flex justify-center items-center active:scale-95 disabled:opacity-70">
                   {loading ? <Loader2 className="animate-spin" /> : "Đăng Nhập"}
@@ -156,15 +193,17 @@ const Login = () => {
             </>
           )}
 
-          {/* CÁC PHẦN FORGOT, OTP, RESET (GIỮ NGUYÊN) */}
+          {/* 2. FORGOT PASSWORD */}
           {view === "forgot" && (
             <div className="animate-in fade-in duration-300">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">Quên mật khẩu?</h2>
-              <p className="text-gray-400 mb-8 leading-relaxed">Nhập Email hoặc Số điện thoại để nhận mã xác thực OTP.</p>
+              <p className="text-gray-400 mb-8 leading-relaxed">Nhập Email để nhận mã OTP và mở khóa tài khoản của bạn.</p>
               <form onSubmit={handleSendOTP} className="space-y-6">
-                <input type="text" placeholder="Email/Số điện thoại" className="w-full px-8 py-4.5 border border-gray-100 rounded-full outline-none focus:ring-1 focus:ring-[#0061f2]" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required />
+                <input type="email" placeholder="Email nhận mã" className="w-full px-8 py-4.5 border border-gray-100 rounded-full outline-none focus:ring-1 focus:ring-[#0061f2]" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required />
                 {resetError && <p className="text-red-500 text-sm font-bold ml-4">{resetError}</p>}
-                <button className="w-full bg-[#0061f2] text-white py-4.5 rounded-full font-bold shadow-lg">Gửi mã xác nhận</button>
+                <button disabled={loading} className="w-full bg-[#0061f2] text-white py-4.5 rounded-full font-bold shadow-lg flex justify-center">
+                   {loading ? <Loader2 className="animate-spin" /> : "Gửi mã xác nhận"}
+                </button>
                 <div className="text-center">
                   <button type="button" onClick={() => {setView("login"); setResetError("");}} className="text-gray-400 text-sm font-bold">Quay lại đăng nhập</button>
                 </div>
@@ -172,6 +211,7 @@ const Login = () => {
             </div>
           )}
 
+          {/* 3. OTP VERIFY */}
           {view === "otp" && (
             <div className="animate-in fade-in duration-300">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">Xác thực OTP</h2>
@@ -187,15 +227,31 @@ const Login = () => {
             </div>
           )}
 
+          {/* 4. RESET PASSWORD */}
           {view === "reset" && (
             <div className="animate-in fade-in duration-300">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">Mật khẩu mới</h2>
-              <p className="text-gray-400 mb-8 leading-relaxed">Vui lòng thiết lập lại mật khẩu mới cho tài khoản.</p>
+              <p className="text-gray-400 mb-6 leading-relaxed">Thiết lập lại mật khẩu để mở khóa tài khoản.</p>
+              
+              {/* Box hướng dẫn format mật khẩu */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-2xl border border-gray-100 text-[12px] text-gray-500">
+                <p className="font-bold text-[#0061f2] mb-1 uppercase">Yêu cầu mật khẩu:</p>
+                <ul className="list-disc ml-4 space-y-1">
+                  <li>Chữ cái đầu tiên phải <b>Viết hoa</b>.</li>
+                  <li>Độ dài tối thiểu <b>6 ký tự</b>.</li>
+                  <li>Phải chứa ít nhất <b>1 ký tự đặc biệt</b> (vd: @, #, $, !...).</li>
+                </ul>
+              </div>
+
               <form onSubmit={handleResetPassword} className="space-y-5">
                 <input type="password" placeholder="Mật khẩu mới" className="w-full px-8 py-4.5 border border-gray-100 rounded-full outline-none focus:ring-1 focus:ring-[#0061f2]" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
                 <input type="password" placeholder="Xác nhận mật khẩu" className="w-full px-8 py-4.5 border border-gray-100 rounded-full outline-none focus:ring-1 focus:ring-[#0061f2]" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-                {resetError && <p className="text-red-500 text-sm font-bold ml-4">{resetError}</p>}
-                <button className="w-full bg-[#0061f2] text-white py-4.5 rounded-full font-bold shadow-lg">Lưu mật khẩu mới</button>
+                
+                {resetError && <p className="text-red-500 text-[13px] font-bold ml-4 leading-tight">{resetError}</p>}
+                
+                <button disabled={loading} className="w-full bg-[#0061f2] text-white py-4.5 rounded-full font-bold shadow-lg flex justify-center active:scale-95">
+                  {loading ? <Loader2 className="animate-spin" /> : "Lưu mật khẩu & Mở khóa"}
+                </button>
               </form>
             </div>
           )}

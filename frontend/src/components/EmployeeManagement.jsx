@@ -16,6 +16,8 @@ const EmployeeManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showRealInfo, setShowRealInfo] = useState({});
   
+  // States cho các loại Modal
+  const [showLogoutModal, setShowLogoutModal] = useState(false); // Modal đăng xuất mới
   const [deleteModal, setDeleteModal] = useState(null);
   const [lockModal, setLockModal] = useState(null); 
   const [confirmName, setConfirmName] = useState(""); 
@@ -25,38 +27,49 @@ const EmployeeManagement = () => {
   const initialForm = { fullName: "", email: "", phone: "", dept: "", role: "manager", password: "" };
   const [newEmp, setNewEmp] = useState(initialForm);
   const [editEmp, setEditEmp] = useState(null);
-  const [errors, setErrors] = useState({}); // Lưu trữ thông báo lỗi cho từng trường
+  const [errors, setErrors] = useState({});
 
   const user = JSON.parse(localStorage.getItem("user")) || { fullName: "System Admin", role: "admin" };
+  
+  const getAuthHeader = () => {
+    const token = localStorage.getItem("token");
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
 
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/api/users`);
+      const res = await axios.get(`${API_URL}/api/users`, getAuthHeader());
       setEmployees(res.data);
-    } catch (err) { console.error("Lỗi:", err); } finally { setLoading(false); }
+    } catch (err) { 
+      console.error("Lỗi:", err);
+      if (err.response?.status === 401) navigate("/");
+    } finally { setLoading(false); }
   };
 
   useEffect(() => { fetchEmployees(); }, []);
 
+  // Logic xác nhận đăng xuất
+  const confirmLogout = () => {
+    localStorage.clear();
+    window.location.href = "/";
+  };
+
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => 
-      (emp.fullName || emp.name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      (emp.fullName || emp.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (emp.email || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [employees, searchTerm]);
 
-  // HÀM VALIDATE TỔNG THỂ
   const validate = (data, isEdit) => {
     let newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^(0|84)(3|5|7|8|9)([0-9]{8})$/;
-    // Password: Chữ đầu viết hoa, dài > 5, có ký tự đặc biệt
     const passRegex = /^[A-Z].*(?=.*[!@#$%^&*(),.?":{}|<>]).{5,}$/;
 
-    if (!data.fullName) newErrors.fullName = "Họ tên không được để trống";
+    if (!data.fullName && !data.name) newErrors.fullName = "Họ tên không được để trống";
     if (!data.dept) newErrors.dept = "Vui lòng chọn phòng ban";
-    
     if (!emailRegex.test(data.email)) newErrors.email = "Email không đúng định dạng";
     if (!phoneRegex.test(data.phone)) newErrors.phone = "Số điện thoại không hợp lệ (10 số)";
 
@@ -77,7 +90,7 @@ const EmployeeManagement = () => {
     if (!validate(newEmp, false)) return;
 
     try {
-      await axios.post(`${API_URL}/api/users/register`, newEmp);
+      await axios.post(`${API_URL}/api/users/register`, newEmp, getAuthHeader());
       setShowAddModal(false);
       setNewEmp(initialForm);
       setErrors({});
@@ -90,7 +103,7 @@ const EmployeeManagement = () => {
     if (!validate(editEmp, true)) return;
 
     try {
-      await axios.put(`${API_URL}/api/users/${editEmp._id}`, editEmp);
+      await axios.put(`${API_URL}/api/users/${editEmp._id}`, editEmp, getAuthHeader());
       setShowEditModal(false);
       setErrors({});
       fetchEmployees();
@@ -104,7 +117,7 @@ const EmployeeManagement = () => {
       return;
     }
     try {
-      await axios.patch(`${API_URL}/api/users/toggle-lock/${lockModal._id}`);
+      await axios.patch(`${API_URL}/api/users/toggle-lock/${lockModal._id}`, {}, getAuthHeader());
       setLockModal(null);
       setConfirmName("");
       fetchEmployees();
@@ -113,7 +126,7 @@ const EmployeeManagement = () => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`${API_URL}/api/users/${deleteModal._id}`);
+      await axios.delete(`${API_URL}/api/users/${deleteModal._id}`, getAuthHeader());
       setDeleteModal(null);
       fetchEmployees();
     } catch (err) { alert("Lỗi xóa"); }
@@ -140,7 +153,12 @@ const EmployeeManagement = () => {
           <NavItem icon={<Users size={20} />} label="Quản lý nhân viên" active={true} onClick={() => navigate("/employee-management")} />
           <NavItem icon={<Settings size={20} />} label="Cài đặt hệ thống" />
         </nav>
-        <button onClick={() => { localStorage.clear(); window.location.href = "/"; }} className="flex items-center gap-3 text-gray-900 p-4 hover:bg-black/10 rounded-xl transition-all mt-auto font-bold active:scale-95">
+        
+        {/* Nút đăng xuất - Đã đổi sang gọi Modal */}
+        <button 
+          onClick={() => setShowLogoutModal(true)} 
+          className="flex items-center gap-3 text-gray-900 p-4 hover:bg-black/10 rounded-xl transition-all mt-auto font-bold active:scale-95"
+        >
           <LogOut size={20} /> Đăng xuất
         </button>
       </aside>
@@ -167,7 +185,7 @@ const EmployeeManagement = () => {
           <h2 className="text-3xl font-extrabold text-[#0f172a]">Quản lý nhân viên</h2>
           
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-            <button onClick={() => { setErrors({}); setShowAddModal(true); }} className="flex items-center gap-2 px-6 py-2.5 bg-yellow-400 text-white rounded-xl font-bold hover:bg-yellow-500 shadow-md transition-all active:scale-95">
+            <button onClick={() => { setErrors({}); setNewEmp(initialForm); setShowAddModal(true); }} className="flex items-center gap-2 px-6 py-2.5 bg-yellow-400 text-white rounded-xl font-bold hover:bg-yellow-500 shadow-md transition-all active:scale-95">
               <Plus size={18} /> Thêm Manager mới
             </button>
           </div>
@@ -198,7 +216,7 @@ const EmployeeManagement = () => {
                     <td className="px-6 py-5">
                       <div className="flex items-center justify-center gap-2">
                         <button onClick={() => setShowRealInfo(p => ({...p, [emp._id]: !p[emp._id]}))} className="p-2 text-gray-400 hover:bg-yellow-100 rounded-lg"><Eye size={18}/></button>
-                        <button onClick={() => { setErrors({}); setEditEmp(emp); setShowEditModal(true); }} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"><Edit3 size={18}/></button>
+                        <button onClick={() => { setErrors({}); setEditEmp({...emp, fullName: emp.fullName || emp.name}); setShowEditModal(true); }} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"><Edit3 size={18}/></button>
                         <button onClick={() => setLockModal(emp)} className={`p-2 rounded-lg transition-colors ${emp.isLocked ? 'text-orange-500 hover:bg-orange-100' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}>
                           {emp.isLocked ? <Unlock size={18}/> : <Lock size={18}/>}
                         </button>
@@ -213,9 +231,71 @@ const EmployeeManagement = () => {
         </main>
       </div>
 
-      {/* MODAL LOCK/DELETE Giữ nguyên */}
+      {/* MODAL XÁC NHẬN ĐĂNG XUẤT (Giữ nguyên thiết kế như Dashboard) */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] w-full max-w-sm p-8 shadow-2xl text-center relative animate-in zoom-in duration-200">
+            <button 
+              onClick={() => setShowLogoutModal(false)}
+              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <LogOut size={32} strokeWidth={2.5} />
+            </div>
+            <h3 className="text-2xl font-black text-gray-800 tracking-tight">Xác nhận thoát?</h3>
+            <p className="text-gray-500 text-sm mt-3 px-4 leading-relaxed font-medium">
+              Bạn có chắc chắn muốn rời khỏi hệ thống quản trị <span className="text-gray-900 font-bold">APMS</span> không?
+            </p>
+            <div className="flex flex-col gap-3 mt-10">
+              <button 
+                onClick={confirmLogout} 
+                className="w-full py-4 font-bold text-white bg-red-500 rounded-2xl shadow-lg shadow-red-200 hover:bg-red-600 transition-all active:scale-95"
+              >
+                Đăng xuất ngay
+              </button>
+              <button 
+                onClick={() => setShowLogoutModal(false)} 
+                className="w-full py-4 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all active:scale-95"
+              >
+                Hủy bỏ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* MODAL THÊM/SỬA */}
+      {/* MODAL LOCK/DELETE VÀ THÊM/SỬA (Giữ nguyên) */}
+      {/* ... (Các modal khác giữ nguyên logic cũ của bạn) ... */}
+      {lockModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl">
+            <h3 className="text-xl font-bold mb-4">{lockModal.isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}</h3>
+            <p className="text-gray-500 text-sm mb-4">Nhập tên <span className="font-bold text-gray-800">{lockModal.fullName || lockModal.name}</span> để xác nhận.</p>
+            <input type="text" className="w-full px-4 py-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-yellow-400 mb-6" value={confirmName} onChange={(e) => setConfirmName(e.target.value)} placeholder="Nhập tên chính xác..." />
+            <div className="flex gap-3">
+              <button onClick={() => {setLockModal(null); setConfirmName("");}} className="flex-1 py-3 text-gray-400 font-bold hover:bg-gray-50 rounded-xl">Hủy</button>
+              <button onClick={handleToggleLock} className={`flex-1 py-3 text-white font-bold rounded-xl ${lockModal.isLocked ? 'bg-green-500' : 'bg-red-500'}`}>Xác nhận</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center">
+            <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><Trash2 size={32} /></div>
+            <h3 className="text-xl font-bold mb-2">Xác nhận xóa?</h3>
+            <p className="text-gray-500 text-sm mb-6">Nhân viên <span className="font-bold">{deleteModal.fullName || deleteModal.name}</span> sẽ bị xóa vĩnh viễn.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteModal(null)} className="flex-1 py-3 text-gray-400 font-bold hover:bg-gray-50 rounded-xl">Hủy</button>
+              <button onClick={handleDelete} className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl">Xóa ngay</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {(showAddModal || showEditModal) && (
         <EmployeeModal 
           title={showEditModal ? "Chỉnh sửa" : "Tạo tài khoản Quản lý"}
@@ -246,7 +326,6 @@ const EmployeeModal = ({ title, data, setData, errors, onClose, onSubmit, isEdit
       </div>
       
       <div className="space-y-4">
-        {/* HỌ TÊN */}
         <div>
           <label className="text-xs font-bold text-gray-400 uppercase ml-1">Họ và tên</label>
           <input type="text" className={`w-full mt-1 px-5 py-3 bg-gray-50 border ${errors.fullName ? 'border-red-500' : 'border-gray-100'} rounded-2xl outline-none focus:ring-2 focus:ring-yellow-400`} value={data.fullName || data.name || ""} onChange={(e) => setData({...data, fullName: e.target.value, name: e.target.value})} />
@@ -254,21 +333,18 @@ const EmployeeModal = ({ title, data, setData, errors, onClose, onSubmit, isEdit
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {/* EMAIL */}
           <div>
             <label className="text-xs font-bold text-gray-400 uppercase ml-1">Email</label>
-            <input type="email" className={`w-full mt-1 px-5 py-3 bg-gray-50 border ${errors.email ? 'border-red-500' : 'border-gray-100'} rounded-2xl outline-none focus:ring-2 focus:ring-yellow-400`} value={data.email} onChange={(e) => setData({...data, email: e.target.value})} />
+            <input type="email" className={`w-full mt-1 px-5 py-3 bg-gray-50 border ${errors.email ? 'border-red-500' : 'border-gray-100'} rounded-2xl outline-none focus:ring-2 focus:ring-yellow-400`} value={data.email || ""} onChange={(e) => setData({...data, email: e.target.value})} />
             {errors.email && <p className="text-red-500 text-[11px] mt-1 ml-2 font-medium">{errors.email}</p>}
           </div>
-          {/* SĐT */}
           <div>
             <label className="text-xs font-bold text-gray-400 uppercase ml-1">Số điện thoại</label>
-            <input type="text" className={`w-full mt-1 px-5 py-3 bg-gray-50 border ${errors.phone ? 'border-red-500' : 'border-gray-100'} rounded-2xl outline-none focus:ring-2 focus:ring-yellow-400`} value={data.phone} onChange={(e) => setData({...data, phone: e.target.value})} />
+            <input type="text" className={`w-full mt-1 px-5 py-3 bg-gray-50 border ${errors.phone ? 'border-red-500' : 'border-gray-100'} rounded-2xl outline-none focus:ring-2 focus:ring-yellow-400`} value={data.phone || ""} onChange={(e) => setData({...data, phone: e.target.value})} />
             {errors.phone && <p className="text-red-500 text-[11px] mt-1 ml-2 font-medium">{errors.phone}</p>}
           </div>
         </div>
 
-        {/* MẬT KHẨU - Chỉ hiện khi thêm mới */}
         {!isEdit && (
           <div>
             <label className="text-xs font-bold text-gray-400 uppercase ml-1">Mật khẩu đăng nhập</label>
@@ -284,10 +360,9 @@ const EmployeeModal = ({ title, data, setData, errors, onClose, onSubmit, isEdit
         )}
 
         <div className="grid grid-cols-2 gap-4">
-          {/* PHÒNG BAN */}
           <div>
             <label className="text-xs font-bold text-gray-400 uppercase ml-1">Phòng ban</label>
-            <select className={`w-full mt-1 px-5 py-3 bg-gray-50 border ${errors.dept ? 'border-red-500' : 'border-gray-100'} rounded-2xl outline-none focus:ring-2 focus:ring-yellow-400`} value={data.dept} onChange={(e) => setData({...data, dept: e.target.value})}>
+            <select className={`w-full mt-1 px-5 py-3 bg-gray-50 border ${errors.dept ? 'border-red-500' : 'border-gray-100'} rounded-2xl outline-none focus:ring-2 focus:ring-yellow-400`} value={data.dept || ""} onChange={(e) => setData({...data, dept: e.target.value})}>
               <option value="">Chọn...</option>
               <option value="Kế toán">Kế toán</option>
               <option value="Nhân sự">Nhân sự</option>
@@ -295,7 +370,6 @@ const EmployeeModal = ({ title, data, setData, errors, onClose, onSubmit, isEdit
             </select>
             {errors.dept && <p className="text-red-500 text-[11px] mt-1 ml-2 font-medium">{errors.dept}</p>}
           </div>
-          {/* VAI TRÒ */}
           <div>
             <label className="text-xs font-bold text-gray-400 uppercase ml-1">Vai trò</label>
             <select 
