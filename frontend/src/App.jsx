@@ -11,12 +11,12 @@ import ManagerDashboard from "./components/ManagerDashboard";
 import EmployeeManagement from "./components/EmployeeManagement";
 import ManagerEmployeeManagement from "./components/ManagerEmployeeManagement";
 
-// 1. Cải tiến ProtectedRoute: Kiểm tra cả Token và User object
+// 1. ProtectedRoute: Kiểm tra cả Token và User object
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
   const userString = localStorage.getItem("user");
 
-  // Nếu thiếu token hoặc user, quay về trang đăng nhập
+  // Nếu thiếu token hoặc user thông tin, quay về trang đăng nhập
   if (!token || !userString) {
     return <Navigate to="/" replace />;
   }
@@ -24,21 +24,21 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// 2. DashboardRedirect: Đảm bảo kiểm tra đúng Role từ MongoDB Atlas
+// 2. DashboardRedirect: Xử lý phân quyền tại node /dashboard
 const DashboardRedirect = () => {
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // Nếu là admin, hiển thị trang Admin cũ
+  // Nếu là admin (Quản trị viên hệ thống)
   if (user?.role === "admin") {
     return <Dashboard />;
   }
 
-  // Nếu là manager (quản lý)
+  // Nếu là manager (Quản lý)
   if (user?.role === "manager" || user?.role === "quản lý") {
     return <ManagerDashboard />;
   }
 
-  // Còn lại là nhân viên (employee)
+  // Mặc định là nhân viên (Employee)
   return <EmployeeDashboard />;
 };
 
@@ -49,7 +49,9 @@ function App() {
         {/* Trang đăng nhập */}
         <Route path="/" element={<Login />} />
 
-        {/* Route Dashboard duy nhất xử lý phân quyền */}
+        {/* QUAN TRỌNG: Điều hướng cả /dashboard và /manager-dashboard 
+          về cùng một logic kiểm tra role để tránh lỗi bị văng ra ngoài
+        */}
         <Route
           path="/dashboard"
           element={
@@ -59,7 +61,16 @@ function App() {
           }
         />
 
-        {/* Trang quản lý của ADMIN (Quản lý Manager) */}
+        <Route
+          path="/manager-dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardRedirect />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Trang quản lý của ADMIN (Quản lý các Manager) */}
         <Route
           path="/employee-management"
           element={
@@ -69,7 +80,7 @@ function App() {
           }
         />
 
-        {/* TRANG MỚI THÊM: Quản lý của MANAGER (Quản lý User/Nhân viên) */}
+        {/* Trang quản lý của MANAGER (Quản lý nhân viên cấp dưới) */}
         <Route
           path="/manager-employee-management"
           element={
@@ -79,7 +90,7 @@ function App() {
           }
         />
 
-        {/* Bọc lót cho các đường dẫn không tồn tại */}
+        {/* Catch-all: Nếu vào link lạ thì về trang chủ */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

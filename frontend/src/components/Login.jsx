@@ -21,8 +21,6 @@ const Login = () => {
   const [resetError, setResetError] = useState("");
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-  // Regex: Chữ đầu viết hoa [A-Z], có ít nhất 1 ký tự đặc biệt, tổng độ dài > 5
   const passRegex = /^[A-Z].*(?=.*[!@#$%^&*(),.?":{}|<>]).{5,}$/;
 
   useEffect(() => {
@@ -33,18 +31,24 @@ const Login = () => {
     return () => clearInterval(interval);
   }, [view, timer]);
 
+  // LOGIC CẬP NHẬT TẠI ĐÂY
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setLoginError("");
+
+    // Kiểm tra bỏ trống
+    if (!account.trim() || !password.trim()) {
+      setLoginError("Vui lòng điền đầy đủ thông tin vào đây!");
+      return; // Dừng lại không gọi API
+    }
+
+    setLoading(true);
     try {
       const response = await axios.post(`${API_URL}/api/login`, { account, password });
-      
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
       navigate("/dashboard");
     } catch (err) {
-      // Backend sẽ trả về message: "Tài khoản đã bị khóa" nếu sai quá 5 lần
       setLoginError(err.response?.data?.message || "Sai tài khoản hoặc mật khẩu!");
     } finally {
       setLoading(false);
@@ -56,7 +60,6 @@ const Login = () => {
     setLoading(true);
     setResetError("");
     try {
-      // Gửi request yêu cầu OTP tới email
       await axios.post(`${API_URL}/api/users/forgot-password`, { email: forgotEmail });
       setTimer(30);
       setView("otp");
@@ -74,8 +77,6 @@ const Login = () => {
       return;
     }
     try {
-      // Giả sử API verify OTP trả về thành công
-      // Nếu bạn dùng mã cứng 123456 thì giữ nguyên, nhưng nên gọi API để đồng bộ Backend
       if (otp === "123456") {
         setResetError("");
         setView("reset");
@@ -90,30 +91,23 @@ const Login = () => {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setResetError("");
-
-    // 1. Kiểm tra format mật khẩu (Chữ đầu viết hoa, >5 ký tự, có ký tự đặc biệt)
     if (!passRegex.test(newPassword)) {
       setResetError("Mật khẩu phải > 5 ký tự, chữ đầu viết hoa và có ít nhất 1 ký tự đặc biệt!");
       return;
     }
-
-    // 2. Kiểm tra khớp mật khẩu
     if (newPassword !== confirmPassword) {
       setResetError("Mật khẩu xác nhận không khớp!");
       return;
     }
-
     setLoading(true);
     try {
-      // 3. Gọi API Reset (Backend cần reset loginAttempts về 0 và isLocked về false khi đổi pass thành công)
       await axios.post(`${API_URL}/api/users/reset-password`, { 
         email: forgotEmail, 
         newPassword: newPassword 
       });
-
       alert("Thay đổi mật khẩu thành công! Tài khoản đã được mở khóa. Hãy đăng nhập lại.");
       setView("login");
-      setAccount(forgotEmail); // Điền sẵn email cũ để đăng nhập
+      setAccount(forgotEmail);
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
@@ -125,7 +119,6 @@ const Login = () => {
 
   return (
     <div className="flex h-screen w-full bg-white font-sans overflow-hidden text-left">
-      {/* CỘT TRÁI: BANNER - GIỮ NGUYÊN */}
       <div className="hidden lg:flex flex-col justify-center w-[60%] bg-gradient-to-tr from-[#0052cc] via-[#0061f2] to-[#0074e4] p-32 text-white relative text-left">
         <div className="z-10 -mt-20">
           <h1 className="text-6xl font-bold mb-4 tracking-tight">Kế Toán Bách Mỹ</h1>
@@ -140,11 +133,9 @@ const Login = () => {
         <div className="absolute -bottom-48 -left-10 w-[500px] h-[500px] border border-white/20 rounded-full"></div>
       </div>
 
-      {/* CỘT PHẢI: FORM */}
       <div className="w-full lg:w-[40%] flex flex-col justify-center items-center px-16 lg:px-24">
         <div className="w-full max-w-sm">
           
-          {/* 1. ĐĂNG NHẬP */}
           {view === "login" && (
             <>
               <div className="mb-14">
@@ -152,15 +143,17 @@ const Login = () => {
                 <p className="text-gray-400 text-lg font-medium opacity-80">Nhập thông tin tài khoản để truy cập hệ thống</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                 <div>
                   <input 
                     type="text" 
                     placeholder="Email/Số điện thoại" 
-                    className="w-full px-8 py-4.5 border border-gray-100 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.03)] outline-none focus:ring-1 focus:ring-[#0061f2] text-gray-700" 
+                    className={`w-full px-8 py-4.5 border rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.03)] outline-none focus:ring-1 focus:ring-[#0061f2] text-gray-700 ${loginError.includes("thông tin") && !account ? "border-red-400" : "border-gray-100"}`}
                     value={account} 
-                    onChange={(e) => setAccount(e.target.value)} 
-                    required 
+                    onChange={(e) => {
+                        setAccount(e.target.value);
+                        if(loginError) setLoginError("");
+                    }} 
                   />
                 </div>
 
@@ -168,10 +161,12 @@ const Login = () => {
                   <input 
                     type={showPassword ? "text" : "password"} 
                     placeholder="Mật khẩu" 
-                    className="w-full px-8 py-4.5 border border-gray-100 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.03)] outline-none focus:ring-1 focus:ring-[#0061f2] text-gray-700" 
+                    className={`w-full px-8 py-4.5 border rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.03)] outline-none focus:ring-1 focus:ring-[#0061f2] text-gray-700 ${loginError.includes("thông tin") && !password ? "border-red-400" : "border-gray-100"}`}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)} 
-                    required 
+                    onChange={(e) => {
+                        setPassword(e.target.value);
+                        if(loginError) setLoginError("");
+                    }} 
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500">
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -193,11 +188,11 @@ const Login = () => {
             </>
           )}
 
-          {/* 2. FORGOT PASSWORD */}
+          {/* ... Các phần FORGOT, OTP, RESET GIỮ NGUYÊN ... */}
           {view === "forgot" && (
             <div className="animate-in fade-in duration-300">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">Quên mật khẩu?</h2>
-              <p className="text-gray-400 mb-8 leading-relaxed">Nhập Email để nhận mã OTP và mở khóa tài khoản của bạn.</p>
+              <p className="text-gray-400 mb-8 leading-relaxed">Nhập Email để nhận mã OTP và mở khóa tài khóa của bạn.</p>
               <form onSubmit={handleSendOTP} className="space-y-6">
                 <input type="email" placeholder="Email nhận mã" className="w-full px-8 py-4.5 border border-gray-100 rounded-full outline-none focus:ring-1 focus:ring-[#0061f2]" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required />
                 {resetError && <p className="text-red-500 text-sm font-bold ml-4">{resetError}</p>}
@@ -211,7 +206,6 @@ const Login = () => {
             </div>
           )}
 
-          {/* 3. OTP VERIFY */}
           {view === "otp" && (
             <div className="animate-in fade-in duration-300">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">Xác thực OTP</h2>
@@ -227,13 +221,11 @@ const Login = () => {
             </div>
           )}
 
-          {/* 4. RESET PASSWORD */}
           {view === "reset" && (
             <div className="animate-in fade-in duration-300">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">Mật khẩu mới</h2>
               <p className="text-gray-400 mb-6 leading-relaxed">Thiết lập lại mật khẩu để mở khóa tài khoản.</p>
               
-              {/* Box hướng dẫn format mật khẩu */}
               <div className="mb-6 p-4 bg-gray-50 rounded-2xl border border-gray-100 text-[12px] text-gray-500">
                 <p className="font-bold text-[#0061f2] mb-1 uppercase">Yêu cầu mật khẩu:</p>
                 <ul className="list-disc ml-4 space-y-1">

@@ -17,6 +17,7 @@ import {
   Loader2,
   Plus,
   TrendingUp,
+  X, // Đã thêm X để dùng cho nút đóng popup
 } from "lucide-react";
 import {
   LineChart,
@@ -79,9 +80,9 @@ const ManagerDashboard = () => {
             M
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">APMS</h1>
+            <h1 className="text-xl font-bold text-white">KTBM</h1>
             <p className="text-[10px] text-blue-200 uppercase tracking-widest font-semibold">
-              MANAGER SYSTEM
+              Quản lý
             </p>
           </div>
         </div>
@@ -94,7 +95,6 @@ const ManagerDashboard = () => {
             onClick={() => navigate("/manager-dashboard")}
           />
           
-          {/* CẬP NHẬT: Điều hướng tới trang Quản lý nhân viên dành riêng cho Manager */}
           <NavItem 
             icon={<Users size={20} />} 
             label="Quản lý nhân viên" 
@@ -131,11 +131,11 @@ const ManagerDashboard = () => {
             <Bell className="text-gray-400" size={22} />
             <div className="flex items-center gap-4 pl-6 border-l border-gray-100 h-10">
               <div className="text-right">
-                <p className="text-base font-bold text-gray-800 leading-tight">{user.fullName}</p>
-                <p className="text-xs text-gray-400 font-semibold uppercase tracking-tight">MANAGER</p>
+                <p className="text-base font-bold text-gray-800 leading-tight">Người dùng</p>
+                <p className="text-xs text-gray-400 font-semibold uppercase tracking-tight">Quản lý</p>
               </div>
               <div className="w-12 h-12 bg-[#0061f2] rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white shadow-md">
-                {user.fullName.charAt(0)}
+                M
               </div>
             </div>
           </div>
@@ -143,7 +143,7 @@ const ManagerDashboard = () => {
 
         <main className="p-10 space-y-8 text-left">
           <section>
-            <h2 className="text-3xl font-extrabold text-[#0f172a] tracking-tight">Manager Dashboard</h2>
+            <h2 className="text-3xl font-extrabold text-[#0f172a] tracking-tight">Dashboard</h2>
             <p className="text-gray-400 text-sm mt-1.5 font-normal">Tổng hợp và phê duyệt báo cáo hệ thống</p>
           </section>
 
@@ -168,20 +168,22 @@ const ManagerDashboard = () => {
         </main>
       </div>
 
+      {/* MODAL ĐĂNG XUẤT ĐÃ CẬP NHẬT THEO THIẾT KẾ CỦA BẠN */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <LogOut size={28} />
-            </div>
-            <h3 className="text-xl font-bold text-gray-800">Xác nhận đăng xuất</h3>
-            <div className="flex gap-3 mt-8">
-              <button onClick={() => setShowLogoutModal(false)} className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all">Hủy</button>
-              <button onClick={confirmLogout} className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg hover:bg-red-600 transition-all">Xác nhận</button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
+                  <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <LogOut size={28} />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800">Xác nhận đăng xuất</h3>
+                  <p className="text-gray-500 text-sm mt-2">Bạn có chắc chắn muốn rời khỏi hệ thống KTBM?</p>
+                  <div className="flex gap-3 mt-8">
+                    <button onClick={() => setShowLogoutModal(false)} className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all">Hủy</button>
+                    <button onClick={confirmLogout} className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg hover:bg-red-600 transition-all">Xác nhận</button>
+                  </div>
+                </div>
+              </div>
+            )}
     </div>
   );
 };

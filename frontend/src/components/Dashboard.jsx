@@ -76,9 +76,9 @@ const Dashboard = () => {
             A
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 leading-none">APMS</h1>
+            <h1 className="text-xl font-bold text-gray-900 leading-none">KTBM</h1>
             <p className="text-[10px] text-gray-700 uppercase tracking-widest font-semibold mt-1">
-              ADMIN SYSTEM
+              ADMIN 
             </p>
           </div>
         </div>
@@ -128,11 +128,11 @@ const Dashboard = () => {
             <Bell className="text-gray-400" size={22} />
             <div className="flex items-center gap-4 pl-6 border-l border-gray-100 h-10">
               <div className="text-right">
-                <p className="text-base font-bold text-gray-800 leading-tight">{user.fullName}</p>
-                <p className="text-xs text-gray-400 font-semibold uppercase tracking-tight">ADMIN</p>
+                <p className="text-base font-bold text-gray-800 leading-tight">Quản trị viên</p>
+                <p className="text-xs text-gray-400 font-semibold uppercase tracking-tight"> Admin </p>
               </div>
-              <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white shadow-md">
-                {user.fullName.charAt(0)}
+              <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center text-yellow-500 font-bold text-lg">
+                A
               </div>
             </div>
           </div>
@@ -140,7 +140,7 @@ const Dashboard = () => {
 
         <main className="p-10 space-y-8 text-left">
           <section>
-            <h2 className="text-3xl font-extrabold text-[#0f172a] tracking-tight">Financial Overview</h2>
+            <h2 className="text-3xl font-extrabold text-[#0f172a] tracking-tight">Tổng quan tài chính</h2>
             <p className="text-gray-400 text-sm mt-1.5 font-normal">Biểu đồ phân tích tài chính toàn hệ thống</p>
           </section>
 
@@ -168,43 +168,20 @@ const Dashboard = () => {
 
       {/* POPUP XÁC NHẬN ĐĂNG XUẤT */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[999] flex items-center justify-center p-4 transition-all duration-300">
-          <div className="bg-white rounded-[32px] w-full max-w-sm p-8 shadow-2xl text-center relative animate-in zoom-in duration-200">
-            {/* Nút đóng nhanh */}
-            <button 
-              onClick={() => setShowLogoutModal(false)}
-              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X size={20} />
-            </button>
-
-            {/* Icon cảnh báo */}
-            <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <LogOut size={32} strokeWidth={2.5} />
-            </div>
-
-            <h3 className="text-2xl font-black text-gray-800 tracking-tight">Xác nhận thoát?</h3>
-            <p className="text-gray-500 text-sm mt-3 px-4 leading-relaxed font-medium">
-              Bạn có chắc chắn muốn rời khỏi hệ thống quản trị <span className="text-gray-900 font-bold">APMS</span> không?
-            </p>
-
-            <div className="flex flex-col gap-3 mt-10">
-              <button 
-                onClick={confirmLogout} 
-                className="w-full py-4 font-bold text-white bg-red-500 rounded-2xl shadow-lg shadow-red-200 hover:bg-red-600 hover:shadow-red-300 transition-all active:scale-95"
-              >
-                Đăng xuất ngay
-              </button>
-              <button 
-                onClick={() => setShowLogoutModal(false)} 
-                className="w-full py-4 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all active:scale-95"
-              >
-                Hủy bỏ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+                      <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
+                        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <LogOut size={28} />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-800">Xác nhận đăng xuất</h3>
+                        <p className="text-gray-500 text-sm mt-2">Bạn có chắc chắn muốn rời khỏi hệ thống KTBM?</p>
+                        <div className="flex gap-3 mt-8">
+                          <button onClick={() => setShowLogoutModal(false)} className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all">Hủy</button>
+                          <button onClick={confirmLogout} className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg hover:bg-red-600 transition-all">Xác nhận</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
     </div>
   );
 };

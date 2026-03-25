@@ -53,7 +53,7 @@ app.post("/api/login", async (req, res) => {
     const user = await User.findOne({ $or: [{ email: account }, { phone: account }] });
 
     // Trường hợp không tìm thấy User
-    if (!user) return res.status(400).json({ message: "Tài khoản không tồn tại!" });
+    if (!user) return res.status(400).json({ message: "Tài khoản hoặc mật khẩu không đúng!" });
 
     // Kiểm tra nếu tài khoản đang bị khóa
     if (user.isLocked) {

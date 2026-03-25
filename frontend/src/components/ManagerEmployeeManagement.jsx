@@ -153,8 +153,8 @@ const ManagerEmployeeManagement = () => {
         <div className="flex items-center gap-3 mb-10 px-2">
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#0061f2] font-bold text-xl shadow-lg">M</div>
           <div>
-            <h1 className="text-xl font-bold text-white leading-none">APMS</h1>
-            <p className="text-[10px] text-blue-200 uppercase tracking-widest font-semibold mt-1">MANAGER SYSTEM</p>
+            <h1 className="text-xl font-bold text-white leading-none">KTBM</h1>
+            <p className="text-[10px] text-blue-200 uppercase tracking-widest font-semibold mt-1">Quản lý</p>
           </div>
         </div>
 
@@ -202,11 +202,11 @@ const ManagerEmployeeManagement = () => {
             <Bell className="text-gray-400" size={22} />
             <div className="flex items-center gap-4 pl-6 border-l border-gray-100 h-10">
               <div className="text-right">
-                <p className="text-base font-bold text-gray-800 leading-tight">{user.fullName}</p>
-                <p className="text-xs text-gray-400 font-semibold uppercase tracking-tight">MANAGER</p>
+                <p className="text-base font-bold text-gray-800 leading-tight">Người dùng</p>
+                <p className="text-xs text-gray-400 font-semibold uppercase tracking-tight">Quản lý</p>
               </div>
               <div className="w-12 h-12 bg-[#0061f2] rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white shadow-md">
-                {user.fullName.charAt(0)}
+                M
               </div>
             </div>
           </div>
@@ -282,7 +282,7 @@ const ManagerEmployeeManagement = () => {
               <LogOut size={28} />
             </div>
             <h3 className="text-xl font-bold text-gray-800">Xác nhận đăng xuất</h3>
-            <p className="text-gray-500 text-sm mt-2">Bạn có chắc chắn muốn rời khỏi hệ thống APMS?</p>
+            <p className="text-gray-500 text-sm mt-2">Bạn có chắc chắn muốn rời khỏi hệ thống KTBM?</p>
             <div className="flex gap-3 mt-8">
               <button onClick={() => setShowLogoutModal(false)} className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all">Hủy</button>
               <button onClick={confirmLogout} className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg hover:bg-red-600 transition-all">Xác nhận</button>

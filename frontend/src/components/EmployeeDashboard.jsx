@@ -81,9 +81,9 @@ const EmployeeDashboard = () => {
             G
           </div>
           <div>
-            <h1 className="text-xl font-bold text-[#0f172a]">GoFinance</h1>
+            <h1 className="text-xl font-bold text-[#0f172a]">KTBM</h1>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">
-              Nhân viên Portal
+              Nhân viên
             </p>
           </div>
         </div>
@@ -133,7 +133,7 @@ const EmployeeDashboard = () => {
             <div className="flex items-center gap-4 pl-6 border-l border-gray-100 h-10 text-left">
               <div className="text-right">
                 <p className="text-base font-bold text-gray-800 leading-tight">
-                  User
+                  Người dùng
                 </p>
                 <p className="text-xs text-gray-400 font-semibold tracking-tight uppercase">
                   {user.role}
@@ -312,32 +312,20 @@ const EmployeeDashboard = () => {
 
       {/* POP-UP XÁC NHẬN ĐĂNG XUẤT */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <LogOut size={28} />
-            </div>
-            <h3 className="text-xl font-bold text-gray-800">Xác nhận đăng xuất</h3>
-            <p className="text-sm text-gray-400 mt-2 leading-relaxed">
-              Bạn muốn đăng xuất đúng không?
-            </p>
-            <div className="flex gap-3 mt-8">
-              <button
-                onClick={() => setShowLogoutModal(false)}
-                className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all active:scale-95"
-              >
-                Trở lại
-              </button>
-              <button
-                onClick={confirmLogout}
-                className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg shadow-red-200 hover:bg-red-600 transition-all active:scale-95"
-              >
-                Đăng xuất
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
+                  <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <LogOut size={28} />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800">Xác nhận đăng xuất</h3>
+                  <p className="text-gray-500 text-sm mt-2">Bạn có chắc chắn muốn rời khỏi hệ thống KTBM?</p>
+                  <div className="flex gap-3 mt-8">
+                    <button onClick={() => setShowLogoutModal(false)} className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all">Hủy</button>
+                    <button onClick={confirmLogout} className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg hover:bg-red-600 transition-all">Xác nhận</button>
+                  </div>
+                </div>
+              </div>
+            )}
     </div>
   );
 };
