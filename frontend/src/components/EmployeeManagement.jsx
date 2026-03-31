@@ -4,7 +4,7 @@ import axios from 'axios';
 import { 
   LayoutDashboard, FileText, BookOpen, Users, 
   BarChart3, UserCheck, Settings, LogOut, Search, 
-  Plus, Eye, X, Trash2, Edit3, Bell, Lock, Unlock
+  Plus, Eye, X, Trash2, Edit3, Bell, Lock, Unlock, CheckCircle
 } from 'lucide-react';
 
 const EmployeeManagement = () => {
@@ -16,8 +16,10 @@ const EmployeeManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showRealInfo, setShowRealInfo] = useState({});
   
-  // States cho các loại Modal
-  const [showLogoutModal, setShowLogoutModal] = useState(false); // Modal đăng xuất mới
+  // State cho thông báo Popup (Toast)
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(null);
   const [lockModal, setLockModal] = useState(null); 
   const [confirmName, setConfirmName] = useState(""); 
@@ -28,6 +30,14 @@ const EmployeeManagement = () => {
   const [newEmp, setNewEmp] = useState(initialForm);
   const [editEmp, setEditEmp] = useState(null);
   const [errors, setErrors] = useState({});
+
+  // Hàm hiển thị thông báo tạm thời
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "success" });
+    }, 3000);
+  };
 
   const user = JSON.parse(localStorage.getItem("user")) || { fullName: "System Admin", role: "admin" };
   
@@ -49,7 +59,6 @@ const EmployeeManagement = () => {
 
   useEffect(() => { fetchEmployees(); }, []);
 
-  // Logic xác nhận đăng xuất
   const confirmLogout = () => {
     localStorage.clear();
     window.location.href = "/";
@@ -95,6 +104,7 @@ const EmployeeManagement = () => {
       setNewEmp(initialForm);
       setErrors({});
       fetchEmployees();
+      showToast("Đã thêm quản lý mới thành công!");
     } catch (err) { alert(err.response?.data?.message || "Lỗi khi thêm"); }
   };
 
@@ -107,6 +117,7 @@ const EmployeeManagement = () => {
       setShowEditModal(false);
       setErrors({});
       fetchEmployees();
+      showToast("Đã cập nhật thông tin thành công!");
     } catch (err) { alert("Lỗi cập nhật"); }
   };
 
@@ -118,9 +129,11 @@ const EmployeeManagement = () => {
     }
     try {
       await axios.patch(`${API_URL}/api/users/toggle-lock/${lockModal._id}`, {}, getAuthHeader());
+      const isLocking = !lockModal.isLocked;
       setLockModal(null);
       setConfirmName("");
       fetchEmployees();
+      showToast(isLocking ? "Đã khóa tài khoản thành công!" : "Đã mở khóa tài khoản thành công!");
     } catch (err) { alert("Lỗi thao tác"); }
   };
 
@@ -129,11 +142,23 @@ const EmployeeManagement = () => {
       await axios.delete(`${API_URL}/api/users/${deleteModal._id}`, getAuthHeader());
       setDeleteModal(null);
       fetchEmployees();
+      showToast("Đã xóa tài khoản thành công!");
     } catch (err) { alert("Lỗi xóa"); }
   };
 
   return (
     <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans text-left relative">
+      
+      {/* POPUP THÔNG BÁO (TOAST) */}
+      {toast.show && (
+        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[1001] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-gray-900 text-white px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/10">
+            <CheckCircle size={20} className="text-yellow-400" />
+            <span className="font-bold text-sm">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
       {/* SIDEBAR */}
       <aside className="w-[280px] bg-yellow-400 border-r border-yellow-500/20 p-6 flex flex-col transition-colors duration-300">
         <div className="flex items-center gap-3 mb-10 px-2">
@@ -154,7 +179,6 @@ const EmployeeManagement = () => {
           <NavItem icon={<Settings size={20} />} label="Cài đặt hệ thống" />
         </nav>
         
-        {/* Nút đăng xuất - Đã đổi sang gọi Modal */}
         <button 
           onClick={() => setShowLogoutModal(true)} 
           className="flex items-center gap-3 text-gray-900 p-4 hover:bg-black/10 rounded-xl transition-all mt-auto font-bold active:scale-95"
@@ -231,25 +255,24 @@ const EmployeeManagement = () => {
         </main>
       </div>
 
-      {/* MODAL XÁC NHẬN ĐĂNG XUẤT (Giữ nguyên thiết kế như Dashboard) */}
+      {/* MODAL XÁC NHẬN ĐĂNG XUẤT */}
       {showLogoutModal && (
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-                      <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
-                        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <LogOut size={28} />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-800">Xác nhận đăng xuất</h3>
-                        <p className="text-gray-500 text-sm mt-2">Bạn có chắc chắn muốn rời khỏi hệ thống KTBM?</p>
-                        <div className="flex gap-3 mt-8">
-                          <button onClick={() => setShowLogoutModal(false)} className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all">Hủy</button>
-                          <button onClick={confirmLogout} className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg hover:bg-red-600 transition-all">Xác nhận</button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut size={28} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800">Xác nhận đăng xuất</h3>
+            <p className="text-gray-500 text-sm mt-2">Bạn có chắc chắn muốn rời khỏi hệ thống KTBM?</p>
+            <div className="flex gap-3 mt-8">
+              <button onClick={() => setShowLogoutModal(false)} className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all">Hủy</button>
+              <button onClick={confirmLogout} className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg hover:bg-red-600 transition-all">Xác nhận</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* MODAL LOCK/DELETE VÀ THÊM/SỬA (Giữ nguyên) */}
-      {/* ... (Các modal khác giữ nguyên logic cũ của bạn) ... */}
+      {/* MODAL KHÓA */}
       {lockModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl">
@@ -264,6 +287,7 @@ const EmployeeManagement = () => {
         </div>
       )}
 
+      {/* MODAL XÓA */}
       {deleteModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center">
