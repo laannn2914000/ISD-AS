@@ -10,6 +10,8 @@ import EmployeeDashboard from "./components/EmployeeDashboard";
 import ManagerDashboard from "./components/ManagerDashboard";
 import EmployeeManagement from "./components/EmployeeManagement";
 import ManagerEmployeeManagement from "./components/ManagerEmployeeManagement";
+import ApprovalManagement from "./components/ApprovalManagement";
+import ReportCreation from "./components/ReportCreation";
 
 // 1. ProtectedRoute: Kiểm tra cả Token và User object
 const ProtectedRoute = ({ children }) => {
@@ -86,6 +88,24 @@ function App() {
           element={
             <ProtectedRoute>
               <ManagerEmployeeManagement />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <ReportCreation />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/approvals"
+          element={
+            <ProtectedRoute>
+              <ApprovalManagement />
             </ProtectedRoute>
           }
         />

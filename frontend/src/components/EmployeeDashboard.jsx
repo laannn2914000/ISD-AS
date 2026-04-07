@@ -41,12 +41,15 @@ const EmployeeDashboard = () => {
     email: "",
   };
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const token = localStorage.getItem("token");
+  const config = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {
     const fetchEmployeeData = async () => {
       try {
         const res = await axios.get(
           `${API_URL}/api/employee-stats/${user.email}`,
+          config,
         );
         setData(res.data);
       } catch (err) {
@@ -56,7 +59,7 @@ const EmployeeDashboard = () => {
       }
     };
     fetchEmployeeData();
-  }, [user.email, API_URL]);
+  }, [user.email, API_URL, config]);
 
   // Hàm xử lý đăng xuất thực tế
   const confirmLogout = () => {
@@ -312,20 +315,34 @@ const EmployeeDashboard = () => {
 
       {/* POP-UP XÁC NHẬN ĐĂNG XUẤT */}
       {showLogoutModal && (
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-                <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
-                  <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <LogOut size={28} />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-800">Xác nhận đăng xuất</h3>
-                  <p className="text-gray-500 text-sm mt-2">Bạn có chắc chắn muốn rời khỏi hệ thống KTBM?</p>
-                  <div className="flex gap-3 mt-8">
-                    <button onClick={() => setShowLogoutModal(false)} className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all">Hủy</button>
-                    <button onClick={confirmLogout} className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg hover:bg-red-600 transition-all">Xác nhận</button>
-                  </div>
-                </div>
-              </div>
-            )}
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut size={28} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800">
+              Xác nhận đăng xuất
+            </h3>
+            <p className="text-gray-500 text-sm mt-2">
+              Bạn có chắc chắn muốn rời khỏi hệ thống KTBM?
+            </p>
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg hover:bg-red-600 transition-all"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -339,25 +356,43 @@ const NavItem = ({ icon, label, active = false }) => (
   </div>
 );
 
-const StatCard = ({ icon, bg, label, value, sub, trend, trendColor = "text-green-600" }) => (
+const StatCard = ({
+  icon,
+  bg,
+  label,
+  value,
+  sub,
+  trend,
+  trendColor = "text-green-600",
+}) => (
   <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm transition-all hover:shadow-md hover:-translate-y-1">
     <div className="flex justify-between items-start mb-4">
       <div>
-        <p className="text-xs text-gray-400 font-semibold mb-1 uppercase tracking-tight">{label}</p>
+        <p className="text-xs text-gray-400 font-semibold mb-1 uppercase tracking-tight">
+          {label}
+        </p>
         <p className="text-3xl font-extrabold text-[#0f172a]">{value}</p>
       </div>
-      <div className={`${bg} w-12 h-12 rounded-2xl flex items-center justify-center`}>
+      <div
+        className={`${bg} w-12 h-12 rounded-2xl flex items-center justify-center`}
+      >
         {icon ? icon : <div className="w-5 h-5 bg-gray-200 animate-pulse" />}
       </div>
     </div>
     <div className="flex justify-between items-center mt-3">
-        <p className="text-[10px] text-gray-400 font-medium">{sub}</p>
-        {trend && (
-            <div className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 ${trendColor} bg-opacity-10 rounded-full`}>
-                {trend.startsWith('+') ? <TrendingUp size={14}/> : <Clock size={14}/>} 
-                {trend}
-            </div>
-        )}
+      <p className="text-[10px] text-gray-400 font-medium">{sub}</p>
+      {trend && (
+        <div
+          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 ${trendColor} bg-opacity-10 rounded-full`}
+        >
+          {trend.startsWith("+") ? (
+            <TrendingUp size={14} />
+          ) : (
+            <Clock size={14} />
+          )}
+          {trend}
+        </div>
+      )}
     </div>
   </div>
 );
