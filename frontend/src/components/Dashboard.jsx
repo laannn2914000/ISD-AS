@@ -13,7 +13,7 @@ import {
   Search,
   Bell,
   Loader2,
-  X,
+  X
 } from "lucide-react";
 import {
   LineChart,
@@ -26,18 +26,24 @@ import {
 } from "recharts";
 
 const Dashboard = () => {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const user = JSON.parse(localStorage.getItem("user")) || {
+    fullName: "System Admin",
+    role: "admin",
+  };
+  
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-  const token = localStorage.getItem("token");
-  const config = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {
     const fetchAdminData = async () => {
       try {
-        await axios.get(`${API_URL}/api/dashboard-stats`, config);
+        const res = await axios.get(`${API_URL}/api/dashboard-stats`);
+        setData(res.data);
       } catch (err) {
         console.error("Lỗi tải dữ liệu Admin:", err);
       } finally {
@@ -45,7 +51,7 @@ const Dashboard = () => {
       }
     };
     fetchAdminData();
-  }, [API_URL, config]);
+  }, [API_URL]);
 
   const confirmLogout = () => {
     localStorage.clear();
@@ -56,14 +62,13 @@ const Dashboard = () => {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-white text-left">
         <Loader2 className="animate-spin text-[#0061f2] mb-4" size={40} />
-        <p className="text-gray-500 font-medium">
-          Đang khởi tạo hệ thống quản trị...
-        </p>
+        <p className="text-gray-500 font-medium">Đang khởi tạo hệ thống quản trị...</p>
       </div>
     );
 
   return (
     <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans text-left relative">
+      
       {/* SIDEBAR */}
       <aside className="w-[280px] bg-yellow-400 border-r border-yellow-500/20 p-6 flex flex-col transition-colors duration-300">
         <div className="flex items-center gap-3 mb-10 px-2">
@@ -71,11 +76,9 @@ const Dashboard = () => {
             A
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 leading-none">
-              KTBM
-            </h1>
+            <h1 className="text-xl font-bold text-gray-900 leading-none">KTBM</h1>
             <p className="text-[10px] text-gray-700 uppercase tracking-widest font-semibold mt-1">
-              ADMIN
+              ADMIN 
             </p>
           </div>
         </div>
@@ -90,18 +93,8 @@ const Dashboard = () => {
           <NavItem icon={<FileText size={20} />} label="Chứng từ kế toán" />
           <NavItem icon={<BookOpen size={20} />} label="Sổ sách kế toán" />
           <NavItem icon={<Users size={20} />} label="Quản lý công nợ" />
-          <NavItem
-            icon={<BarChart3 size={20} />}
-            label="Báo cáo tài chính"
-            active={location.pathname === "/reports"}
-            onClick={() => navigate("/reports")}
-          />
-          <NavItem
-            icon={<UserCheck size={20} />}
-            label="Phê duyệt báo cáo"
-            active={location.pathname === "/approvals"}
-            onClick={() => navigate("/approvals")}
-          />
+          <NavItem icon={<BarChart3 size={20} />} label="Báo cáo tài chính" />
+          <NavItem icon={<UserCheck size={20} />} label="Phê duyệt báo cáo" />
           <NavItem
             icon={<Users size={20} />}
             label="Quản lý nhân viên"
@@ -123,10 +116,7 @@ const Dashboard = () => {
         {/* HEADER */}
         <header className="h-[88px] bg-white border-b border-gray-100 flex items-center px-10 sticky top-0 z-10 shadow-sm">
           <div className="relative flex-1 max-w-2xl text-left">
-            <Search
-              className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"
-              size={20}
-            />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
               placeholder="Tìm kiếm báo cáo hoặc chứng từ..."
@@ -138,13 +128,8 @@ const Dashboard = () => {
             <Bell className="text-gray-400" size={22} />
             <div className="flex items-center gap-4 pl-6 border-l border-gray-100 h-10">
               <div className="text-right">
-                <p className="text-base font-bold text-gray-800 leading-tight">
-                  Quản trị viên
-                </p>
-                <p className="text-xs text-gray-400 font-semibold uppercase tracking-tight">
-                  {" "}
-                  Admin{" "}
-                </p>
+                <p className="text-base font-bold text-gray-800 leading-tight">Quản trị viên</p>
+                <p className="text-xs text-gray-400 font-semibold uppercase tracking-tight"> Admin </p>
               </div>
               <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center text-yellow-500 font-bold text-lg">
                 A
@@ -155,12 +140,8 @@ const Dashboard = () => {
 
         <main className="p-10 space-y-8 text-left">
           <section>
-            <h2 className="text-3xl font-extrabold text-[#0f172a] tracking-tight">
-              Tổng quan tài chính
-            </h2>
-            <p className="text-gray-400 text-sm mt-1.5 font-normal">
-              Biểu đồ phân tích tài chính toàn hệ thống
-            </p>
+            <h2 className="text-3xl font-extrabold text-[#0f172a] tracking-tight">Tổng quan tài chính</h2>
+            <p className="text-gray-400 text-sm mt-1.5 font-normal">Biểu đồ phân tích tài chính toàn hệ thống</p>
           </section>
 
           {/* BIỂU ĐỒ */}
@@ -168,41 +149,11 @@ const Dashboard = () => {
             <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#f1f5f9"
-                  />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#94a3b8", fontSize: 12 }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#94a3b8", fontSize: 12 }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: "12px",
-                      border: "none",
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#ef4444"
-                    strokeWidth={4}
-                    dot={{
-                      r: 6,
-                      fill: "#ef4444",
-                      strokeWidth: 2,
-                      stroke: "#fff",
-                    }}
-                  />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                  <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }} />
+                  <Line type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={4} dot={{ r: 6, fill: "#ef4444", strokeWidth: 2, stroke: "#fff" }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -217,70 +168,41 @@ const Dashboard = () => {
 
       {/* POPUP XÁC NHẬN ĐĂNG XUẤT */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <LogOut size={28} />
-            </div>
-            <h3 className="text-xl font-bold text-gray-800">
-              Xác nhận đăng xuất
-            </h3>
-            <p className="text-gray-500 text-sm mt-2">
-              Bạn có chắc chắn muốn rời khỏi hệ thống KTBM?
-            </p>
-            <div className="flex gap-3 mt-8">
-              <button
-                onClick={() => setShowLogoutModal(false)}
-                className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={confirmLogout}
-                className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg hover:bg-red-600 transition-all"
-              >
-                Xác nhận
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+                      <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
+                        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <LogOut size={28} />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-800">Xác nhận đăng xuất</h3>
+                        <p className="text-gray-500 text-sm mt-2">Bạn có chắc chắn muốn rời khỏi hệ thống KTBM?</p>
+                        <div className="flex gap-3 mt-8">
+                          <button onClick={() => setShowLogoutModal(false)} className="flex-1 py-3.5 font-bold text-gray-500 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all">Hủy</button>
+                          <button onClick={confirmLogout} className="flex-1 py-3.5 font-bold text-white bg-red-500 rounded-2xl shadow-lg hover:bg-red-600 transition-all">Xác nhận</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
     </div>
   );
 };
 
 // --- COMPONENTS CON ---
-const NavItem = ({ icon, label, active = false, onClick }) => {
-  const className = `flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${
-    active
-      ? "bg-white text-yellow-400 font-bold shadow-md"
-      : "text-gray-800 hover:bg-black/10 hover:text-gray-900"
-  }`;
-
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={`${className} cursor-pointer w-full text-left`}
-      >
-        {icon} <span className="text-sm">{label}</span>
-      </button>
-    );
-  }
-
-  return (
-    <div className={`${className} cursor-default`}>
-      {icon} <span className="text-sm">{label}</span>
-    </div>
-  );
-};
+const NavItem = ({ icon, label, active = false, onClick }) => (
+  <div
+    onClick={onClick}
+    className={`flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all ${
+      active
+        ? "bg-white text-yellow-400 font-bold shadow-md"
+        : "text-gray-800 hover:bg-black/10 hover:text-gray-900"
+    }`}
+  >
+    {icon} <span className="text-sm">{label}</span>
+  </div>
+);
 
 const RecentDocsTable = () => (
   <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm overflow-hidden text-left">
-    <h3 className="font-bold text-gray-800 text-lg mb-6 tracking-tight">
-      Chứng từ kế toán gần đây
-    </h3>
+    <h3 className="font-bold text-gray-800 text-lg mb-6 tracking-tight">Chứng từ kế toán gần đây</h3>
     <table className="w-full text-left">
       <thead>
         <tr className="text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-50">
@@ -295,9 +217,7 @@ const RecentDocsTable = () => (
           <td className="py-4 font-bold text-gray-700">DOC-1240</td>
           <td className="py-4 text-gray-500 font-medium">Kế toán</td>
           <td className="py-4 text-gray-500 font-medium">Vũ Trí Kiên</td>
-          <td className="py-4 font-bold text-orange-500 bg-orange-50/50 rounded-lg px-2 inline-block mt-2">
-            Chờ duyệt
-          </td>
+          <td className="py-4 font-bold text-orange-500 bg-orange-50/50 rounded-lg px-2 inline-block mt-2">Chờ duyệt</td>
         </tr>
       </tbody>
     </table>
@@ -306,9 +226,7 @@ const RecentDocsTable = () => (
 
 const ApprovalRequestsTable = () => (
   <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm overflow-hidden text-left">
-    <h3 className="font-bold text-gray-800 text-lg mb-6 tracking-tight">
-      Yêu cầu phê duyệt
-    </h3>
+    <h3 className="font-bold text-gray-800 text-lg mb-6 tracking-tight">Yêu cầu phê duyệt</h3>
     <table className="w-full text-left">
       <thead>
         <tr className="text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-50">
@@ -324,9 +242,7 @@ const ApprovalRequestsTable = () => (
           <td className="py-4 font-bold text-gray-800">45,000,000đ</td>
           <td className="py-4 text-gray-500">Nguyễn Văn A</td>
           <td className="py-4">
-            <button className="text-[#0061f2] font-bold hover:underline transition-all">
-              Xem chi tiết
-            </button>
+             <button className="text-[#0061f2] font-bold hover:underline transition-all">Xem chi tiết</button>
           </td>
         </tr>
       </tbody>
@@ -335,18 +251,10 @@ const ApprovalRequestsTable = () => (
 );
 
 const chartData = [
-  { name: "Jan", value: 45 },
-  { name: "Feb", value: 52 },
-  { name: "Mar", value: 48 },
-  { name: "Apr", value: 62 },
-  { name: "May", value: 55 },
-  { name: "Jun", value: 68 },
-  { name: "Jul", value: 58 },
-  { name: "Aug", value: 65 },
-  { name: "Sep", value: 71 },
-  { name: "Oct", value: 66 },
-  { name: "Nov", value: 73 },
-  { name: "Dec", value: 80 },
+  { name: "Jan", value: 45 }, { name: "Feb", value: 52 }, { name: "Mar", value: 48 },
+  { name: "Apr", value: 62 }, { name: "May", value: 55 }, { name: "Jun", value: 68 },
+  { name: "Jul", value: 58 }, { name: "Aug", value: 65 }, { name: "Sep", value: 71 },
+  { name: "Oct", value: 66 }, { name: "Nov", value: 73 }, { name: "Dec", value: 80 },
 ];
 
 export default Dashboard;
