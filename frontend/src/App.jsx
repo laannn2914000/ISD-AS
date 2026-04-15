@@ -10,6 +10,10 @@ import EmployeeDashboard from "./components/EmployeeDashboard";
 import ManagerDashboard from "./components/ManagerDashboard";
 import EmployeeManagement from "./components/EmployeeManagement";
 import ManagerEmployeeManagement from "./components/ManagerEmployeeManagement";
+import ReportSystem from "./components/ReportSystem";
+import ManagerReportSystem from "./components/ManagerReportSystem";
+import EmployeeReportSystem from "./components/EmployeeReportSystem";
+import CreateReport from "./components/CreateReport";
 
 // 1. ProtectedRoute: Kiểm tra cả Token và User object
 const ProtectedRoute = ({ children }) => {
@@ -70,6 +74,15 @@ function App() {
           }
         />
 
+        <Route
+          path="/employee-dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardRedirect />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Trang quản lý của ADMIN (Quản lý các Manager) */}
         <Route
           path="/employee-management"
@@ -89,6 +102,20 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/employee-create-report"
+          element={
+            <ProtectedRoute>
+              <CreateReport />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="/report-system" element={<ReportSystem />} />
+        <Route path="/manager-reports" element={<ManagerReportSystem />} />
+        <Route path="/employee-reports" element={<EmployeeReportSystem />} />
+        <Route path="/reports" element={<ReportSystem />} />
 
         {/* Catch-all: Nếu vào link lạ thì về trang chủ */}
         <Route path="*" element={<Navigate to="/" replace />} />

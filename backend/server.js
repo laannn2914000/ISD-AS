@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const reportRoutes = require('./routes/reportRoutes');
 require("dotenv").config();
 
 const app = express();
@@ -28,7 +29,7 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
-// 3. MIDDLEWARE
+// 3. MIDDLEWARE (Đã di chuyển lên đây để sửa lỗi ReferenceError)
 const verifyToken = (req, res, next) => {
   const token = req.headers["authorization"]?.split(" ")[1];
   if (!token) return res.status(401).json({ message: "Không tìm thấy Token!" });
@@ -39,6 +40,9 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
+
+// --- TÍCH HỢP ROUTE REPORT TẠI ĐÂY ---
+app.use('/api/reports', verifyToken, reportRoutes);
 
 // 4. ROUTE ĐĂNG NHẬP
 app.post("/api/login", async (req, res) => {
