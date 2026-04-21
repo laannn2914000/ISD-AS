@@ -102,17 +102,15 @@ const ManagerDashboard = () => {
             active={location.pathname === "/manager-employee-management"}
             onClick={() => navigate("/manager-employee-management")}
           />
-          {/* ĐÂY LÀ MỤC GỐC, ĐÃ GÁN ĐIỀU HƯỚNG */}
           <NavItem
             icon={<FileCheck size={20} />}
             label="Phê duyệt báo cáo"
             active={location.pathname === "/manager-reports"}
             onClick={() => navigate("/manager-reports")}
           />
-          {/* LOẠI BỎ DÒNG <NavItem icon={<UserCheck size={20} />} label="Phê duyệt báo cáo" /> NẾU CÓ */}
-          <NavItem icon={<BarChart3 size={20} />} label="Báo cáo tài chính" />
-          <NavItem icon={<FileSearch size={20} />} label="Kiểm soát chứng từ" />
-          <NavItem icon={<Settings size={20} />} label="Cài đặt" />
+          <NavItem icon={<BarChart3 size={20} />} label="Báo cáo tài chính" disabled />
+          <NavItem icon={<FileSearch size={20} />} label="Kiểm soát chứng từ" disabled />
+          <NavItem icon={<Settings size={20} />} label="Cài đặt" disabled />
         </nav>
 
         <button
@@ -251,13 +249,15 @@ const ManagerDashboard = () => {
 };
 
 // --- COMPONENTS CON ---
-const NavItem = ({ icon, label, active = false, onClick }) => (
+const NavItem = ({ icon, label, active = false, onClick, disabled = false }) => (
   <div
-    onClick={onClick}
-    className={`flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all ${
-      active
-        ? "bg-white/20 text-white font-bold shadow-sm"
-        : "text-blue-100 hover:bg-white/10 hover:text-white"
+    onClick={disabled ? undefined : onClick}
+    className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${
+      disabled 
+        ? "cursor-not-allowed" 
+        : active 
+          ? "bg-white/20 text-white font-bold shadow-sm" 
+          : "text-blue-100 hover:bg-white/10 hover:text-white cursor-pointer"
     }`}
   >
     {icon} <span className="text-sm">{label}</span>

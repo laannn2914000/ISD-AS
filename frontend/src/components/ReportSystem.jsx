@@ -107,10 +107,10 @@ const ReportSystem = () => {
             active={location.pathname === "/dashboard"}
             onClick={() => navigate("/dashboard")}
           />
-          <NavItem icon={<FileText size={20} />} label="Chứng từ kế toán" />
-          <NavItem icon={<BookOpen size={20} />} label="Sổ sách kế toán" />
-          <NavItem icon={<Users size={20} />} label="Quản lý công nợ" />
-          <NavItem icon={<BarChart3 size={20} />} label="Báo cáo tài chính" />
+          <NavItem icon={<FileText size={20} />} label="Chứng từ kế toán" disabled />
+          <NavItem icon={<BookOpen size={20} />} label="Sổ sách kế toán" disabled />
+          <NavItem icon={<Users size={20} />} label="Quản lý công nợ" disabled />
+          <NavItem icon={<BarChart3 size={20} />} label="Báo cáo tài chính" disabled />
           <NavItem
             icon={<UserCheck size={20} />}
             label="Phê duyệt báo cáo"
@@ -123,7 +123,7 @@ const ReportSystem = () => {
             active={location.pathname === "/employee-management"}
             onClick={() => navigate("/employee-management")}
           />
-          <NavItem icon={<Settings size={20} />} label="Cài đặt hệ thống" />
+          <NavItem icon={<Settings size={20} />} label="Cài đặt hệ thống" disabled />
         </nav>
 
         <button
@@ -239,18 +239,25 @@ const ReportSystem = () => {
                       <td className="p-6">
                         <span
                           className={`px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase ${
-                            report.status === "Approved"
+                            report.status === "Approved" || report.status === "approved"
                               ? "bg-green-50 text-green-600"
-                              : report.status === "Rejected"
+                              : report.status === "Rejected" || report.status === "rejected"
                                 ? "bg-red-50 text-red-600"
                                 : "bg-orange-50 text-orange-600"
                           }`}
                         >
-                          {report.status}
+                          {report.status === "Approved" || report.status === "approved" 
+                            ? "Đã duyệt" 
+                            : report.status === "Rejected" || report.status === "rejected" 
+                              ? "Từ chối" 
+                              : "Chờ duyệt"}
                         </span>
                       </td>
                       <td className="p-6 flex justify-center gap-3">
-                        <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg">
+                        <button
+                          className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"
+                          onClick={() => setSelectedReport(report)}
+                        >
                           <Eye size={18} />
                         </button>
                         {report.status === "Submitted" && (
@@ -304,7 +311,7 @@ const ReportSystem = () => {
           <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in duration-200 text-left">
             <h3 className="text-xl font-bold text-gray-800">
               {showConfirmModal.type === "Approve"
-                ? "Xác nhận phê duyệt"
+                ? "Xác nhận duyệt báo cáo"
                 : "Từ chối báo cáo"}
             </h3>
             {showConfirmModal.type === "Reject" && (
@@ -329,21 +336,35 @@ const ReportSystem = () => {
                 onClick={handleAction}
                 className={`flex-1 py-3.5 font-bold text-white rounded-2xl ${showConfirmModal.type === "Approve" ? "bg-green-500" : "bg-red-500"}`}
               >
-                Xác nhận
+                {showConfirmModal.type === "Approve" ? "Duyệt" : "Từ chối"}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL CHI TIẾT BÁO CÁO */}
+      {selectedReport && (
+        <ReportDetailModal
+          report={selectedReport}
+          onClose={() => setSelectedReport(null)}
+        />
       )}
     </div>
   );
 };
 
 // --- COMPONENTS HỖ TRỢ (GIỮ ĐÚNG THIẾT KẾ CŨ) ---
-const NavItem = ({ icon, label, active = false, onClick }) => (
+const NavItem = ({ icon, label, active = false, onClick, disabled = false }) => (
   <div
-    onClick={onClick}
-    className={`flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all ${active ? "bg-white text-yellow-400 font-bold shadow-md" : "text-gray-800 hover:bg-black/10 hover:text-gray-900"}`}
+    onClick={disabled ? undefined : onClick}
+    className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${
+      disabled 
+        ? "cursor-not-allowed" 
+        : active 
+          ? "bg-white text-yellow-400 font-bold shadow-md" 
+          : "text-gray-800 hover:bg-black/10 hover:text-gray-900 cursor-pointer"
+    }`}
   >
     {icon} <span className="text-sm">{label}</span>
   </div>

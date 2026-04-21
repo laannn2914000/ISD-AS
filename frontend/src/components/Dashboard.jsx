@@ -93,10 +93,10 @@ const Dashboard = () => {
             active={location.pathname === "/dashboard"}
             onClick={() => navigate("/dashboard")}
           />
-          <NavItem icon={<FileText size={20} />} label="Chứng từ kế toán" />
-          <NavItem icon={<BookOpen size={20} />} label="Sổ sách kế toán" />
-          <NavItem icon={<Users size={20} />} label="Quản lý công nợ" />
-          <NavItem icon={<BarChart3 size={20} />} label="Báo cáo tài chính" />
+          <NavItem icon={<FileText size={20} />} label="Chứng từ kế toán" disabled />
+          <NavItem icon={<BookOpen size={20} />} label="Sổ sách kế toán" disabled />
+          <NavItem icon={<Users size={20} />} label="Quản lý công nợ" disabled />
+          <NavItem icon={<BarChart3 size={20} />} label="Báo cáo tài chính" disabled />
           <NavItem
             icon={<UserCheck size={20} />}
             label="Phê duyệt báo cáo"
@@ -110,7 +110,7 @@ const Dashboard = () => {
             active={location.pathname === "/employee-management"}
             onClick={() => navigate("/employee-management")}
           />
-          <NavItem icon={<Settings size={20} />} label="Cài đặt hệ thống" />
+          <NavItem icon={<Settings size={20} />} label="Cài đặt hệ thống" disabled />
         </nav>
 
         <button
@@ -252,13 +252,15 @@ const Dashboard = () => {
 };
 
 // --- COMPONENTS CON ---
-const NavItem = ({ icon, label, active = false, onClick }) => (
+const NavItem = ({ icon, label, active = false, onClick, disabled = false }) => (
   <div
-    onClick={onClick}
-    className={`flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all ${
-      active
-        ? "bg-white text-yellow-400 font-bold shadow-md"
-        : "text-gray-800 hover:bg-black/10 hover:text-gray-900"
+    onClick={disabled ? undefined : onClick}
+    className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${
+      disabled 
+        ? "cursor-not-allowed" 
+        : active 
+          ? "bg-white text-yellow-400 font-bold shadow-md" 
+          : "text-gray-800 hover:bg-black/10 hover:text-gray-900 cursor-pointer"
     }`}
   >
     {icon} <span className="text-sm">{label}</span>

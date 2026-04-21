@@ -305,8 +305,8 @@ const CreateReport = () => {
             label="Tạo báo cáo"
             active={true}
           />
-          <NavItem icon={<History size={20} />} label="Lịch sử báo cáo" />
-          <NavItem icon={<User size={20} />} label="Thông tin cá nhân" />
+          <NavItem icon={<History size={20} />} label="Lịch sử báo cáo" disabled />
+          <NavItem icon={<User size={20} />} label="Thông tin cá nhân" disabled />
         </nav>
         <button
           onClick={() => navigate("/login")}
@@ -496,10 +496,16 @@ const CreateReport = () => {
   );
 };
 
-const NavItem = ({ icon, label, active = false, onClick }) => (
+const NavItem = ({ icon, label, active = false, onClick, disabled = false }) => (
   <div
-    onClick={onClick}
-    className={`flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all ${active ? "bg-blue-50 text-[#0061f2] font-bold shadow-sm" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}
+    onClick={disabled ? undefined : onClick}
+    className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${
+      disabled 
+        ? "cursor-not-allowed" 
+        : active 
+          ? "bg-blue-50 text-[#0061f2] font-bold shadow-sm" 
+          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900 cursor-pointer"
+    }`}
   >
     {icon} <span className="text-sm">{label}</span>
   </div>
