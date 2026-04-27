@@ -14,6 +14,10 @@ import ReportSystem from "./components/ReportSystem";
 import ManagerReportSystem from "./components/ManagerReportSystem";
 import EmployeeReportSystem from "./components/EmployeeReportSystem";
 import CreateReport from "./components/CreateReport";
+import EditReport from "./components/EditReport";
+import EmployeeProfile from "./components/EmployeeProfile";
+import ManagerFinanceReportSystem from "./components/ManagerFinanceReportSystem";
+import AdminFinanceReportSystem from "./components/AdminFinanceReportSystem";
 
 // 1. ProtectedRoute: Kiểm tra cả Token và User object
 const ProtectedRoute = ({ children }) => {
@@ -112,10 +116,36 @@ function App() {
           }
         />
 
+        <Route
+          path="/employee-edit-report/:id"
+          element={
+            <ProtectedRoute>
+              <EditReport />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/employee-profile"
+          element={
+            <ProtectedRoute>
+              <EmployeeProfile />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="/report-system" element={<ReportSystem />} />
         <Route path="/manager-reports" element={<ManagerReportSystem />} />
         <Route path="/employee-reports" element={<EmployeeReportSystem />} />
         <Route path="/reports" element={<ReportSystem />} />
+        <Route
+          path="/manager-finance-reports"
+          element={<ManagerFinanceReportSystem />}
+        />
+        <Route
+          path="/admin-finance-reports"
+          element={<AdminFinanceReportSystem />}
+        />
 
         {/* Catch-all: Nếu vào link lạ thì về trang chủ */}
         <Route path="*" element={<Navigate to="/" replace />} />

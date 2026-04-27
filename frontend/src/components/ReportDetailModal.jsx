@@ -45,8 +45,8 @@ const ReportDetailModal = ({ report, onClose }) => {
         <div className="flex-1 overflow-y-auto p-12 bg-gray-100/30">
           <div
             ref={componentRef}
-            className="bg-white shadow-sm mx-auto p-16 min-h-[1100px] w-[794px] text-black font-serif"
-            style={{ color: "#000" }}
+            className="bg-white shadow-sm mx-auto p-16 min-h-[1100px] w-[794px] text-black font-sans tracking-normal"
+            style={{ color: "#000", letterSpacing: 0.2 }}
           >
             {/* Header văn bản hành chính */}
             <div className="flex justify-between mb-10 italic text-sm">
@@ -70,12 +70,22 @@ const ReportDetailModal = ({ report, onClose }) => {
 
             <div className="text-center mb-10">
               <h1 className="text-2xl font-bold uppercase">{report.name}</h1>
-              <p className="mt-2 text-lg italic">Loại báo cáo: {report.type === 'finance' ? 'Báo cáo tài chính' : report.type === 'daily' ? 'Báo cáo hàng ngày' : report.type === 'business' ? 'Báo cáo kết quả kinh doanh' : report.type}</p>
+              <p className="mt-2 text-lg italic">
+                Loại báo cáo:{" "}
+                {report.type === "finance"
+                  ? "Báo cáo tài chính"
+                  : report.type === "daily"
+                    ? "Báo cáo hàng ngày"
+                    : report.type === "business"
+                      ? "Báo cáo kết quả kinh doanh"
+                      : report.type}
+              </p>
             </div>
 
             <div className="space-y-6 text-justify leading-relaxed">
               <p>
-                <span className="font-bold">Kính gửi:</span> {report.content?.recipient || "Ban Giám đốc Công ty KTBM"}
+                <span className="font-bold">Kính gửi:</span>{" "}
+                {report.content?.recipient || "Ban Giám đốc Công ty KTBM"}
               </p>
 
               <p>
@@ -83,7 +93,8 @@ const ReportDetailModal = ({ report, onClose }) => {
                 {report.content?.reporter || report.creatorName}
               </p>
               <p>
-                <span className="font-bold">Bộ phận:</span> {report.content?.dept || report.dept}
+                <span className="font-bold">Bộ phận:</span>{" "}
+                {report.content?.dept || report.dept}
               </p>
 
               {/* Hiển thị các trường nội dung mà nhân viên đã tạo */}
@@ -95,40 +106,89 @@ const ReportDetailModal = ({ report, onClose }) => {
                   <div className="whitespace-pre-wrap pl-4 border-l-2 border-gray-200 py-2 space-y-3">
                     {/* Hiển thị tất cả các trường có trong content */}
                     {report.content.companyName && (
-                      <div><span className="font-semibold">Tên công ty:</span> {report.content.companyName}</div>
+                      <div>
+                        <span className="font-semibold">Tên công ty:</span>{" "}
+                        {report.content.companyName}
+                      </div>
                     )}
                     {report.content.reportNumber && (
-                      <div><span className="font-semibold">Số:</span> {report.content.reportNumber}</div>
+                      <div>
+                        <span className="font-semibold">Số:</span>{" "}
+                        {report.content.reportNumber}
+                      </div>
                     )}
                     {report.content.location && (
-                      <div><span className="font-semibold">Địa điểm:</span> {report.content.location}</div>
+                      <div>
+                        <span className="font-semibold">Địa điểm:</span>{" "}
+                        {report.content.location}
+                      </div>
                     )}
                     {report.content.title && (
-                      <div><span className="font-semibold">Tiêu đề:</span> {report.content.title}</div>
+                      <div>
+                        <span className="font-semibold">Tiêu đề:</span>{" "}
+                        {report.content.title}
+                      </div>
                     )}
-                    {report.content.income !== undefined && report.content.income !== 0 && (
-                      <div><span className="font-semibold">Tổng thu:</span> {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(report.content.income)}</div>
-                    )}
-                    {report.content.expense !== undefined && report.content.expense !== 0 && (
-                      <div><span className="font-semibold">Tổng chi:</span> {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(report.content.expense)}</div>
-                    )}
+                    {report.content.income !== undefined &&
+                      report.content.income !== 0 && (
+                        <div>
+                          <span className="font-semibold">Tổng thu:</span>{" "}
+                          {new Intl.NumberFormat("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                          }).format(report.content.income)}
+                        </div>
+                      )}
+                    {report.content.expense !== undefined &&
+                      report.content.expense !== 0 && (
+                        <div>
+                          <span className="font-semibold">Tổng chi:</span>{" "}
+                          {new Intl.NumberFormat("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                          }).format(report.content.expense)}
+                        </div>
+                      )}
                     {report.content.detail && (
-                      <div><span className="font-semibold">Chi tiết:</span> {report.content.detail}</div>
+                      <div>
+                        <span className="font-semibold">Chi tiết:</span>{" "}
+                        {report.content.detail}
+                      </div>
                     )}
                     {report.content.done && (
-                      <div><span className="font-semibold">Công việc đã hoàn thành:</span> {report.content.done}</div>
+                      <div>
+                        <span className="font-semibold">
+                          Công việc đã hoàn thành:
+                        </span>{" "}
+                        {report.content.done}
+                      </div>
                     )}
                     {report.content.issues && (
-                      <div><span className="font-semibold">Vấn đề gặp phải:</span> {report.content.issues}</div>
+                      <div>
+                        <span className="font-semibold">Vấn đề gặp phải:</span>{" "}
+                        {report.content.issues}
+                      </div>
                     )}
                     {report.content.plan && (
-                      <div><span className="font-semibold">Kế hoạch tiếp theo:</span> {report.content.plan}</div>
+                      <div>
+                        <span className="font-semibold">
+                          Kế hoạch tiếp theo:
+                        </span>{" "}
+                        {report.content.plan}
+                      </div>
                     )}
-                    {report.content.kpi !== undefined && report.content.kpi !== 0 && (
-                      <div><span className="font-semibold">Chỉ tiêu KPI:</span> {report.content.kpi}%</div>
-                    )}
+                    {report.content.kpi !== undefined &&
+                      report.content.kpi !== 0 && (
+                        <div>
+                          <span className="font-semibold">Chỉ tiêu KPI:</span>{" "}
+                          {report.content.kpi}%
+                        </div>
+                      )}
                     {report.content.analysis && (
-                      <div><span className="font-semibold">Phân tích:</span> {report.content.analysis}</div>
+                      <div>
+                        <span className="font-semibold">Phân tích:</span>{" "}
+                        {report.content.analysis}
+                      </div>
                     )}
                   </div>
                 </div>

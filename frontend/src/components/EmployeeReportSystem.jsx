@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReportDetailModal from "./ReportDetailModal";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -20,6 +21,7 @@ const EmployeeReportSystem = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,17 +34,18 @@ const EmployeeReportSystem = () => {
 
   useEffect(() => {
     fetchMyReports();
-  }, []);
+    // eslint-disable-next-line
+  }, [searchTerm]);
 
   const fetchMyReports = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/api/reports/my-reports`, {
+      const res = await axios.get(`${API_URL}/api/reports/search`, {
+        params: { name: searchTerm },
         headers: { Authorization: `Bearer ${token}` },
       });
       setReports(res.data);
     } catch (err) {
-      console.error("Lỗi tải báo cáo:", err);
       setReports([]);
     } finally {
       setLoading(false);
@@ -89,8 +92,12 @@ const EmployeeReportSystem = () => {
             label="Tạo báo cáo"
             onClick={() => navigate("/employee-create-report")}
           />
-          <NavItem icon={<History size={20} />} label="Lịch sử báo cáo" disabled />
-          <NavItem icon={<User size={20} />} label="Thông tin cá nhân" disabled />
+          <NavItem
+            icon={<User size={20} />}
+            label="Thông tin cá nhân"
+            active={location.pathname === "/employee-profile"}
+            onClick={() => navigate("/employee-profile")}
+          />
         </nav>
 
         <button
@@ -196,20 +203,40 @@ const EmployeeReportSystem = () => {
                               ? "bg-green-50 text-green-600"
                               : report.status === "Rejected"
                                 ? "bg-red-50 text-red-600"
-                                : "bg-blue-50 text-blue-600"
+                                : report.status === "Draft"
+                                  ? "bg-yellow-50 text-yellow-600"
+                                  : "bg-blue-50 text-blue-600"
                           }`}
                         >
-                          {report.status === "Submitted"
-                            ? "Chờ duyệt"
-                            : report.status === "Approved"
-                              ? "Đã duyệt"
-                              : "Từ chối"}
+                          {report.status === "Draft"
+                            ? "Nháp"
+                            : report.status === "Submitted"
+                              ? "Chờ duyệt"
+                              : report.status === "Approved"
+                                ? "Đã duyệt"
+                                : "Từ chối"}
                         </span>
                       </td>
                       <td className="p-6 text-center">
-                        <button className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all">
-                          <Eye size={18} />
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                            onClick={() => setSelectedReport(report)}
+                          >
+                            <Eye size={18} />
+                          </button>
+                          {report.status === "Draft" && (
+                            <button
+                              className="p-2 text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-all"
+                              onClick={() =>
+                                navigate(`/employee-edit-report/${report._id}`)
+                              }
+                              title="Chỉnh sửa báo cáo"
+                            >
+                              <RefreshCcw size={18} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -251,18 +278,31 @@ const EmployeeReportSystem = () => {
           </div>
         </div>
       )}
+      {/* MODAL XEM CHI TIẾT BÁO CÁO */}
+      {selectedReport && (
+        <ReportDetailModal
+          report={selectedReport}
+          onClose={() => setSelectedReport(null)}
+        />
+      )}
     </div>
   );
 };
 
-const NavItem = ({ icon, label, active = false, onClick, disabled = false }) => (
+const NavItem = ({
+  icon,
+  label,
+  active = false,
+  onClick,
+  disabled = false,
+}) => (
   <div
     onClick={disabled ? undefined : onClick}
     className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${
-      disabled 
-        ? "cursor-not-allowed" 
-        : active 
-          ? "bg-blue-50 text-[#0061f2] font-bold shadow-sm" 
+      disabled
+        ? "cursor-not-allowed"
+        : active
+          ? "bg-blue-50 text-[#0061f2] font-bold shadow-sm"
           : "text-gray-500 hover:bg-gray-50 hover:text-gray-900 cursor-pointer"
     }`}
   >

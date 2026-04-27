@@ -49,11 +49,18 @@ const ReportSystem = () => {
   const fetchReports = async () => {
     setLoading(true);
     try {
+      // Lọc bỏ báo cáo tài chính - chỉ hiển thị báo cáo hàng ngày và kinh doanh
       const res = await axios.get(`${API_URL}/api/reports/search`, {
-        params: { name: searchTerm, status: statusFilter },
+        params: {
+          name: searchTerm,
+          status: statusFilter === "All" ? "" : statusFilter,
+          // Không lọc theo type để lấy tất cả, sẽ lọc client-side
+        },
         headers: { Authorization: `Bearer ${token}` },
       });
-      setReports(res.data);
+      // Lọc client-side: bỏ báo cáo tài chính
+      const filtered = res.data.filter((r) => r.type !== "finance");
+      setReports(filtered);
     } catch (err) {
       setReports([]);
     } finally {
@@ -107,10 +114,27 @@ const ReportSystem = () => {
             active={location.pathname === "/dashboard"}
             onClick={() => navigate("/dashboard")}
           />
-          <NavItem icon={<FileText size={20} />} label="Chứng từ kế toán" disabled />
-          <NavItem icon={<BookOpen size={20} />} label="Sổ sách kế toán" disabled />
-          <NavItem icon={<Users size={20} />} label="Quản lý công nợ" disabled />
-          <NavItem icon={<BarChart3 size={20} />} label="Báo cáo tài chính" disabled />
+          <NavItem
+            icon={<FileText size={20} />}
+            label="Chứng từ kế toán"
+            disabled
+          />
+          <NavItem
+            icon={<BookOpen size={20} />}
+            label="Sổ sách kế toán"
+            disabled
+          />
+          <NavItem
+            icon={<Users size={20} />}
+            label="Quản lý công nợ"
+            disabled
+          />
+          <NavItem
+            icon={<BarChart3 size={20} />}
+            label="Báo cáo tài chính"
+            active={location.pathname === "/admin-finance-reports"}
+            onClick={() => navigate("/admin-finance-reports")}
+          />
           <NavItem
             icon={<UserCheck size={20} />}
             label="Phê duyệt báo cáo"
@@ -123,7 +147,11 @@ const ReportSystem = () => {
             active={location.pathname === "/employee-management"}
             onClick={() => navigate("/employee-management")}
           />
-          <NavItem icon={<Settings size={20} />} label="Cài đặt hệ thống" disabled />
+          <NavItem
+            icon={<Settings size={20} />}
+            label="Cài đặt hệ thống"
+            disabled
+          />
         </nav>
 
         <button
@@ -235,21 +263,27 @@ const ReportSystem = () => {
                       <td className="p-6 text-gray-600 font-medium">
                         {report.name}
                       </td>
-                      <td className="p-6 text-gray-500">{report.creator}</td>
+                      <td className="p-6 text-gray-500">
+                        {report.creatorName}
+                      </td>
                       <td className="p-6">
                         <span
                           className={`px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase ${
-                            report.status === "Approved" || report.status === "approved"
+                            report.status === "Approved" ||
+                            report.status === "approved"
                               ? "bg-green-50 text-green-600"
-                              : report.status === "Rejected" || report.status === "rejected"
+                              : report.status === "Rejected" ||
+                                  report.status === "rejected"
                                 ? "bg-red-50 text-red-600"
                                 : "bg-orange-50 text-orange-600"
                           }`}
                         >
-                          {report.status === "Approved" || report.status === "approved" 
-                            ? "Đã duyệt" 
-                            : report.status === "Rejected" || report.status === "rejected" 
-                              ? "Từ chối" 
+                          {report.status === "Approved" ||
+                          report.status === "approved"
+                            ? "Đã duyệt"
+                            : report.status === "Rejected" ||
+                                report.status === "rejected"
+                              ? "Từ chối"
                               : "Chờ duyệt"}
                         </span>
                       </td>
@@ -355,14 +389,20 @@ const ReportSystem = () => {
 };
 
 // --- COMPONENTS HỖ TRỢ (GIỮ ĐÚNG THIẾT KẾ CŨ) ---
-const NavItem = ({ icon, label, active = false, onClick, disabled = false }) => (
+const NavItem = ({
+  icon,
+  label,
+  active = false,
+  onClick,
+  disabled = false,
+}) => (
   <div
     onClick={disabled ? undefined : onClick}
     className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${
-      disabled 
-        ? "cursor-not-allowed" 
-        : active 
-          ? "bg-white text-yellow-400 font-bold shadow-md" 
+      disabled
+        ? "cursor-not-allowed"
+        : active
+          ? "bg-white text-yellow-400 font-bold shadow-md"
           : "text-gray-800 hover:bg-black/10 hover:text-gray-900 cursor-pointer"
     }`}
   >

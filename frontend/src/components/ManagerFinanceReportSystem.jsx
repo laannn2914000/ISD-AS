@@ -15,10 +15,11 @@ import {
   CheckCircle,
   XCircle,
   Eye,
+  FileText,
 } from "lucide-react";
 import ReportDetailModal from "./ReportDetailModal";
 
-const ManagerReportSystem = () => {
+const ManagerFinanceReportSystem = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,10 +49,12 @@ const ManagerReportSystem = () => {
   const fetchReports = async () => {
     setLoading(true);
     try {
+      // Chỉ lấy báo cáo tài chính (type = finance)
       const res = await axios.get(`${API_URL}/api/reports/search`, {
         params: {
           name: searchTerm,
           status: statusFilter === "All" ? "" : statusFilter,
+          type: "finance", // Lọc theo loại báo cáo tài chính
         },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -87,7 +90,7 @@ const ManagerReportSystem = () => {
 
   return (
     <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans">
-      {/* SIDEBAR - GIỮ NGUYÊN BẢN GIAO DIỆN MÀU XANH CỦA BẠN */}
+      {/* SIDEBAR */}
       <aside className="w-[280px] bg-[#0061f2] border-r border-white/10 p-6 flex flex-col transition-colors duration-300">
         <div className="flex items-center gap-3 mb-10 px-2">
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#0061f2] font-bold text-xl shadow-lg">
@@ -123,7 +126,8 @@ const ManagerReportSystem = () => {
           <NavItem
             icon={<BarChart3 size={20} />}
             label="Báo cáo tài chính"
-            disabled
+            active={location.pathname === "/manager-finance-reports"}
+            onClick={() => navigate("/manager-finance-reports")}
           />
           <NavItem
             icon={<FileSearch size={20} />}
@@ -151,14 +155,8 @@ const ManagerReportSystem = () => {
             />
             <input
               type="text"
-              placeholder="Tìm kiếm báo cáo..."
+              placeholder="Tìm kiếm báo cáo tài chính..."
               className="w-full pl-14 pr-6 py-3.5 bg-gray-50 rounded-full outline-none focus:ring-1 focus:ring-[#0061f2] text-sm"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                // Debounce search
-                setTimeout(() => fetchReports(), 500);
-              }}
             />
           </div>
 
@@ -184,10 +182,10 @@ const ManagerReportSystem = () => {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h2 className="text-2xl font-bold text-gray-800">
-                Hệ thống phê duyệt
+                Báo cáo tài chính
               </h2>
               <p className="text-gray-400 text-sm mt-1">
-                Cập nhật và xử lý báo cáo từ cấp dưới
+                Quản lý và phê duyệt báo cáo tài chính từ nhân viên
               </p>
             </div>
             <div className="flex bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
@@ -311,7 +309,7 @@ const ManagerReportSystem = () => {
             <div className="text-center py-20 bg-white rounded-[32px] border border-gray-100 shadow-sm">
               <FileSearch size={64} className="mx-auto text-gray-200 mb-4" />
               <p className="text-gray-400 font-medium">
-                Hiện không có báo cáo nào cần xử lý
+                Hiện không có báo cáo tài chính nào cần xử lý
               </p>
             </div>
           )}
@@ -354,7 +352,11 @@ const ManagerReportSystem = () => {
               </button>
               <button
                 onClick={handleAction}
-                className={`flex-1 py-3 text-white rounded-xl font-bold shadow-lg transition-all ${showConfirmModal.type === "Approve" ? "bg-green-600 shadow-green-100 hover:bg-green-700" : "bg-red-600 shadow-red-100 hover:bg-red-700"}`}
+                className={`flex-1 py-3 text-white rounded-xl font-bold shadow-lg transition-all ${
+                  showConfirmModal.type === "Approve"
+                    ? "bg-green-600 shadow-green-100 hover:bg-green-700"
+                    : "bg-red-600 shadow-red-100 hover:bg-red-700"
+                }`}
               >
                 {showConfirmModal.type === "Approve" ? "Duyệt" : "Từ chối"}
               </button>
@@ -403,7 +405,6 @@ const ManagerReportSystem = () => {
   );
 };
 
-// NavItem giữ đúng style màu trắng trên nền xanh của bạn
 const NavItem = ({
   icon,
   label,
@@ -425,4 +426,4 @@ const NavItem = ({
   </div>
 );
 
-export default ManagerReportSystem;
+export default ManagerFinanceReportSystem;

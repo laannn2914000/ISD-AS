@@ -1,8 +1,16 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, FileText, BookOpen, Users, 
-  BarChart3, UserCheck, Settings, LogOut, FilePlus, History
+  LayoutDashboard,
+  FileText,
+  BookOpen,
+  Users,
+  BarChart3,
+  UserCheck,
+  Settings,
+  LogOut,
+  FilePlus,
+  History,
 } from "lucide-react";
 
 const Sidebar = ({ user, setShowLogoutModal }) => {
@@ -14,30 +22,98 @@ const Sidebar = ({ user, setShowLogoutModal }) => {
     switch (role?.toLowerCase()) {
       case "admin":
         return [
-          { icon: <LayoutDashboard size={20} />, label: "Dashboard", path: "/dashboard" },
-          { icon: <FileText size={20} />, label: "Chứng từ kế toán", path: "/documents" },
-          { icon: <BookOpen size={20} />, label: "Sổ sách kế toán", path: "/books" },
-          { icon: <Users size={20} />, label: "Quản lý công nợ", path: "/debt" },
-          { icon: <BarChart3 size={20} />, label: "Báo cáo tài chính", path: "/reports" },
-          { icon: <UserCheck size={20} />, label: "Phê duyệt báo cáo", path: "/approvals" },
-          { icon: <Users size={20} />, label: "Quản lý nhân viên", path: "/employee-management" },
-          { icon: <Settings size={20} />, label: "Cài đặt hệ thống", path: "/settings" },
+          {
+            icon: <LayoutDashboard size={20} />,
+            label: "Dashboard",
+            path: "/dashboard",
+          },
+          {
+            icon: <FileText size={20} />,
+            label: "Chứng từ kế toán",
+            path: "/documents",
+          },
+          {
+            icon: <BookOpen size={20} />,
+            label: "Sổ sách kế toán",
+            path: "/books",
+          },
+          {
+            icon: <Users size={20} />,
+            label: "Quản lý công nợ",
+            path: "/debt",
+          },
+          {
+            icon: <BarChart3 size={20} />,
+            label: "Báo cáo tài chính",
+            path: "/reports",
+          },
+          {
+            icon: <UserCheck size={20} />,
+            label: "Phê duyệt báo cáo",
+            path: "/approvals",
+          },
+          {
+            icon: <Users size={20} />,
+            label: "Quản lý nhân viên",
+            path: "/employee-management",
+          },
+          {
+            icon: <Settings size={20} />,
+            label: "Cài đặt hệ thống",
+            path: "/settings",
+          },
         ];
       case "manager":
         return [
-          { icon: <LayoutDashboard size={20} />, label: "Dashboard", path: "/manager-dashboard" },
-          { icon: <FileText size={20} />, label: "Chứng từ kế toán", path: "/documents" },
-          { icon: <BarChart3 size={20} />, label: "Báo cáo tài chính", path: "/reports" },
-          { icon: <UserCheck size={20} />, label: "Phê duyệt báo cáo", path: "/approvals" },
-          { icon: <Settings size={20} />, label: "Cài đặt cá nhân", path: "/settings" },
+          {
+            icon: <LayoutDashboard size={20} />,
+            label: "Dashboard",
+            path: "/manager-dashboard",
+          },
+          {
+            icon: <FileText size={20} />,
+            label: "Chứng từ kế toán",
+            path: "/documents",
+          },
+          {
+            icon: <BarChart3 size={20} />,
+            label: "Báo cáo tài chính",
+            path: "/reports",
+          },
+          {
+            icon: <UserCheck size={20} />,
+            label: "Phê duyệt báo cáo",
+            path: "/approvals",
+          },
+          {
+            icon: <Settings size={20} />,
+            label: "Cài đặt cá nhân",
+            path: "/settings",
+          },
         ];
       case "nhân viên":
       case "employee":
         return [
-          { icon: <LayoutDashboard size={20} />, label: "Dashboard", path: "/employee-dashboard" },
-          { icon: <FilePlus size={20} />, label: "Tạo chứng từ mới", path: "/create-document" },
-          { icon: <History size={20} />, label: "Lịch sử chứng từ", path: "/history" },
-          { icon: <Settings size={20} />, label: "Hồ sơ cá nhân", path: "/profile" },
+          {
+            icon: <LayoutDashboard size={20} />,
+            label: "Dashboard",
+            path: "/employee-dashboard",
+          },
+          {
+            icon: <FilePlus size={20} />,
+            label: "Tạo chứng từ mới",
+            path: "/create-document",
+          },
+          {
+            icon: <History size={20} />,
+            label: "Lịch sử chứng từ",
+            path: "/history",
+          },
+          {
+            icon: <Settings size={20} />,
+            label: "Hồ sơ cá nhân",
+            path: "/profile",
+          },
         ];
       default:
         return [];

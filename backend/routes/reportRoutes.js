@@ -44,7 +44,8 @@ router.get("/my-reports", async (req, res) => {
 // 3. SEARCH & FILTER (Manager & Admin dùng để quản lý)
 router.get("/search", async (req, res) => {
   try {
-    const { name, reportId, creator, status, startDate, endDate } = req.query;
+    const { name, reportId, creator, status, startDate, endDate, type } =
+      req.query;
     let query = {};
 
     // Phân quyền: Employee chỉ thấy bài mình, Manager & Admin thấy tất cả
@@ -57,6 +58,7 @@ router.get("/search", async (req, res) => {
     if (reportId) query.reportId = reportId;
     if (creator) query.creatorName = { $regex: creator, $options: "i" };
     if (status && status !== "All") query.status = status;
+    if (type) query.type = type;
 
     if (startDate || endDate) {
       query.createdAt = {};
@@ -98,6 +100,49 @@ router.patch("/:id/decide", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: "Lỗi xử lý báo cáo" });
+  }
+});
+
+// 4b. LẤY CHI TIẾT BÁO CÁO
+router.get("/:id", async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ message: "Không tìm thấy" });
+    res.json(report);
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi lấy dữ liệu" });
+  }
+});
+
+// 4c. CẬP NHẬT BÁO CÁO (Chỉ Employee sửa được báo cáo Draft của mình)
+router.put("/:id", async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ message: "Không tìm thấy" });
+
+    // Chỉ chủ sở hữu mới được sửa
+    if (report.creatorId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Không có quyền sửa" });
+    }
+
+    // Chỉ sửa được khi là Draft
+    if (report.status !== "Draft") {
+      return res.status(400).json({ message: "Chỉ sửa được báo cáo nháp" });
+    }
+
+    const { name, type, content, status, dept, creatorName } = req.body;
+    if (name) report.name = name;
+    if (type) report.type = type;
+    if (content) report.content = content;
+    if (status) report.status = status;
+    if (dept) report.dept = dept;
+    if (creatorName) report.creatorName = creatorName;
+    report.updatedAt = Date.now();
+
+    await report.save();
+    res.json(report);
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi cập nhật báo cáo" });
   }
 });
 

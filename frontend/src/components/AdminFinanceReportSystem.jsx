@@ -3,10 +3,11 @@ import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
+  FileText,
+  BookOpen,
   Users,
-  FileCheck,
   BarChart3,
-  FileSearch,
+  UserCheck,
   Settings,
   LogOut,
   Search,
@@ -15,10 +16,11 @@ import {
   CheckCircle,
   XCircle,
   Eye,
+  FileSearch,
 } from "lucide-react";
 import ReportDetailModal from "./ReportDetailModal";
 
-const ManagerReportSystem = () => {
+const AdminFinanceReportSystem = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,7 +38,7 @@ const ManagerReportSystem = () => {
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem("user")) || {
     fullName: "Người dùng",
-    role: "manager",
+    role: "admin",
   };
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const token = localStorage.getItem("token");
@@ -48,10 +50,12 @@ const ManagerReportSystem = () => {
   const fetchReports = async () => {
     setLoading(true);
     try {
+      // Chỉ lấy báo cáo tài chính (type = finance)
       const res = await axios.get(`${API_URL}/api/reports/search`, {
         params: {
           name: searchTerm,
           status: statusFilter === "All" ? "" : statusFilter,
+          type: "finance", // Lọc theo loại báo cáo tài chính
         },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -86,17 +90,19 @@ const ManagerReportSystem = () => {
   };
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans">
-      {/* SIDEBAR - GIỮ NGUYÊN BẢN GIAO DIỆN MÀU XANH CỦA BẠN */}
-      <aside className="w-[280px] bg-[#0061f2] border-r border-white/10 p-6 flex flex-col transition-colors duration-300">
+    <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans text-left relative">
+      {/* SIDEBAR (GIỮ NGUYÊN THIẾT KẾ DASHBOARD) */}
+      <aside className="w-[280px] bg-yellow-400 border-r border-yellow-500/20 p-6 flex flex-col">
         <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#0061f2] font-bold text-xl shadow-lg">
-            M
+          <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center text-yellow-400 font-bold text-xl shadow-lg">
+            A
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white leading-tight">KTBM</h1>
-            <p className="text-[10px] text-blue-200 uppercase tracking-widest font-semibold">
-              Quản lý
+            <h1 className="text-xl font-bold text-gray-900 leading-none">
+              KTBM
+            </h1>
+            <p className="text-[10px] text-gray-700 uppercase tracking-widest font-semibold mt-1">
+              ADMIN
             </p>
           </div>
         </div>
@@ -105,37 +111,52 @@ const ManagerReportSystem = () => {
           <NavItem
             icon={<LayoutDashboard size={20} />}
             label="Dashboard"
-            active={location.pathname === "/manager-dashboard"}
-            onClick={() => navigate("/manager-dashboard")}
+            active={location.pathname === "/dashboard"}
+            onClick={() => navigate("/dashboard")}
+          />
+          <NavItem
+            icon={<FileText size={20} />}
+            label="Chứng từ kế toán"
+            disabled
+          />
+          <NavItem
+            icon={<BookOpen size={20} />}
+            label="Sổ sách kế toán"
+            disabled
           />
           <NavItem
             icon={<Users size={20} />}
-            label="Quản lý nhân viên"
-            active={location.pathname === "/manager-employee-management"}
-            onClick={() => navigate("/manager-employee-management")}
-          />
-          <NavItem
-            icon={<FileCheck size={20} />}
-            label="Phê duyệt báo cáo"
-            active={location.pathname === "/manager-reports"}
-            onClick={() => navigate("/manager-reports")}
+            label="Quản lý công nợ"
+            disabled
           />
           <NavItem
             icon={<BarChart3 size={20} />}
             label="Báo cáo tài chính"
-            disabled
+            active={location.pathname === "/admin-finance-reports"}
+            onClick={() => navigate("/admin-finance-reports")}
           />
           <NavItem
-            icon={<FileSearch size={20} />}
-            label="Kiểm soát chứng từ"
+            icon={<UserCheck size={20} />}
+            label="Phê duyệt báo cáo"
+            active={location.pathname === "/report-system"}
+            onClick={() => navigate("/report-system")}
+          />
+          <NavItem
+            icon={<Users size={20} />}
+            label="Quản lý nhân viên"
+            active={location.pathname === "/employee-management"}
+            onClick={() => navigate("/employee-management")}
+          />
+          <NavItem
+            icon={<Settings size={20} />}
+            label="Cài đặt hệ thống"
             disabled
           />
-          <NavItem icon={<Settings size={20} />} label="Cài đặt" disabled />
         </nav>
 
         <button
           onClick={() => setShowLogoutModal(true)}
-          className="flex items-center gap-3 text-white p-4 hover:bg-white/10 rounded-xl transition-all mt-auto font-bold"
+          className="flex items-center gap-3 text-gray-900 p-4 hover:bg-black/10 rounded-xl transition-all mt-auto font-bold active:scale-95"
         >
           <LogOut size={20} /> Đăng xuất
         </button>
@@ -143,22 +164,20 @@ const ManagerReportSystem = () => {
 
       {/* MAIN CONTENT */}
       <div className="flex-1 overflow-y-auto">
+        {/* HEADER (GIỮ NGUYÊN THIẾT KẾ DASHBOARD) */}
         <header className="h-[88px] bg-white border-b border-gray-100 flex items-center px-10 sticky top-0 z-10 shadow-sm">
-          <div className="relative flex-1 max-w-2xl text-left">
+          <div className="relative flex-1 max-w-2xl">
             <Search
               className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"
               size={20}
             />
             <input
               type="text"
-              placeholder="Tìm kiếm báo cáo..."
-              className="w-full pl-14 pr-6 py-3.5 bg-gray-50 rounded-full outline-none focus:ring-1 focus:ring-[#0061f2] text-sm"
+              placeholder="Tìm kiếm báo cáo tài chính..."
+              className="w-full pl-14 pr-6 py-3.5 bg-gray-50 rounded-full outline-none focus:ring-1 focus:ring-yellow-500 text-sm"
               value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                // Debounce search
-                setTimeout(() => fetchReports(), 500);
-              }}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && fetchReports()}
             />
           </div>
 
@@ -170,11 +189,11 @@ const ManagerReportSystem = () => {
                   Người dùng
                 </p>
                 <p className="text-xs text-gray-400 font-semibold uppercase tracking-tight">
-                  Quản lý
+                  Quản trị viên
                 </p>
               </div>
-              <div className="w-12 h-12 bg-[#0061f2] rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white shadow-md">
-                M
+              <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white shadow-md">
+                A
               </div>
             </div>
           </div>
@@ -184,10 +203,10 @@ const ManagerReportSystem = () => {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h2 className="text-2xl font-bold text-gray-800">
-                Hệ thống phê duyệt
+                Báo cáo tài chính
               </h2>
               <p className="text-gray-400 text-sm mt-1">
-                Cập nhật và xử lý báo cáo từ cấp dưới
+                Quản lý và phê duyệt báo cáo tài chính từ nhân viên
               </p>
             </div>
             <div className="flex bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
@@ -197,7 +216,7 @@ const ManagerReportSystem = () => {
                   onClick={() => setStatusFilter(s)}
                   className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${
                     statusFilter === s
-                      ? "bg-blue-600 text-white shadow-md"
+                      ? "bg-gray-900 text-white shadow-md"
                       : "text-gray-500 hover:bg-gray-50"
                   }`}
                 >
@@ -215,7 +234,10 @@ const ManagerReportSystem = () => {
 
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 bg-white rounded-[32px] border border-dashed border-gray-200">
-              <Loader2 className="animate-spin text-blue-600 mb-4" size={40} />
+              <Loader2
+                className="animate-spin text-yellow-500 mb-4"
+                size={40}
+              />
               <p className="text-gray-400 font-medium">Đang tải danh sách...</p>
             </div>
           ) : reports.length > 0 ? (
@@ -311,7 +333,7 @@ const ManagerReportSystem = () => {
             <div className="text-center py-20 bg-white rounded-[32px] border border-gray-100 shadow-sm">
               <FileSearch size={64} className="mx-auto text-gray-200 mb-4" />
               <p className="text-gray-400 font-medium">
-                Hiện không có báo cáo nào cần xử lý
+                Hiện không có báo cáo tài chính nào cần xử lý
               </p>
             </div>
           )}
@@ -354,7 +376,11 @@ const ManagerReportSystem = () => {
               </button>
               <button
                 onClick={handleAction}
-                className={`flex-1 py-3 text-white rounded-xl font-bold shadow-lg transition-all ${showConfirmModal.type === "Approve" ? "bg-green-600 shadow-green-100 hover:bg-green-700" : "bg-red-600 shadow-red-100 hover:bg-red-700"}`}
+                className={`flex-1 py-3 text-white rounded-xl font-bold shadow-lg transition-all ${
+                  showConfirmModal.type === "Approve"
+                    ? "bg-green-600 shadow-green-100 hover:bg-green-700"
+                    : "bg-red-600 shadow-red-100 hover:bg-red-700"
+                }`}
               >
                 {showConfirmModal.type === "Approve" ? "Duyệt" : "Từ chối"}
               </button>
@@ -403,7 +429,6 @@ const ManagerReportSystem = () => {
   );
 };
 
-// NavItem giữ đúng style màu trắng trên nền xanh của bạn
 const NavItem = ({
   icon,
   label,
@@ -417,12 +442,12 @@ const NavItem = ({
       disabled
         ? "cursor-not-allowed"
         : active
-          ? "bg-white/20 text-white font-bold shadow-inner"
-          : "text-blue-100 hover:bg-white/10 hover:text-white cursor-pointer"
+          ? "bg-white text-yellow-400 font-bold shadow-md"
+          : "text-gray-800 hover:bg-black/10 hover:text-gray-900 cursor-pointer"
     }`}
   >
     {icon} <span className="text-sm">{label}</span>
   </div>
 );
 
-export default ManagerReportSystem;
+export default AdminFinanceReportSystem;

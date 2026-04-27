@@ -113,9 +113,12 @@ const EmployeeDashboard = () => {
             active={location.pathname === "/employee-create-report"}
             onClick={() => navigate("/employee-create-report")}
           />
-
-          <NavItem icon={<History size={20} />} label="Lịch sử báo cáo" disabled />
-          <NavItem icon={<User size={20} />} label="Thông tin cá nhân" disabled />
+          <NavItem
+            icon={<User size={20} />}
+            label="Thông tin cá nhân"
+            active={location.pathname === "/employee-profile"}
+            onClick={() => navigate("/employee-profile")}
+          />
         </nav>
 
         {/* Nút đăng xuất mở Pop-up */}
@@ -176,7 +179,10 @@ const EmployeeDashboard = () => {
               </p>
             </section>
 
-            <button className="flex items-center gap-2.5 px-6 py-3.5 bg-[#0061f2] text-white rounded-2xl font-bold text-base hover:bg-[#0052cc] transition-all shadow-lg active:scale-95">
+            <button
+              onClick={() => navigate("/employee-create-report")}
+              className="flex items-center gap-2.5 px-6 py-3.5 bg-[#0061f2] text-white rounded-2xl font-bold text-base hover:bg-[#0052cc] transition-all shadow-lg active:scale-95"
+            >
               <Plus size={20} strokeWidth={3} />
               Tạo báo cáo mới
             </button>
@@ -235,7 +241,22 @@ const EmployeeDashboard = () => {
               <div className="h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={personalPerformanceData}
+                    data={[
+                      { day: "Tổng", reports: data?.stats?.totalMyDocs || 0 },
+                      {
+                        day: "Đã duyệt",
+                        reports: data?.stats?.approvedDocs || 0,
+                      },
+                      {
+                        day: "Chờ duyệt",
+                        reports: data?.stats?.pendingDocs || 0,
+                      },
+                      {
+                        day: "Từ chối",
+                        reports: data?.stats?.rejectedDocs || 0,
+                      },
+                      { day: "Nháp", reports: data?.stats?.draftDocs || 0 },
+                    ]}
                     margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                   >
                     <CartesianGrid
@@ -363,14 +384,20 @@ const EmployeeDashboard = () => {
 };
 
 // --- COMPONENTS ---
-const NavItem = ({ icon, label, active = false, onClick, disabled = false }) => (
+const NavItem = ({
+  icon,
+  label,
+  active = false,
+  onClick,
+  disabled = false,
+}) => (
   <div
     onClick={disabled ? undefined : onClick}
     className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all active:scale-[0.98] ${
-      disabled 
-        ? "cursor-not-allowed" 
-        : active 
-          ? "bg-blue-50 text-[#0061f2] font-bold shadow-sm" 
+      disabled
+        ? "cursor-not-allowed"
+        : active
+          ? "bg-blue-50 text-[#0061f2] font-bold shadow-sm"
           : "text-gray-400 hover:bg-gray-50 hover:text-gray-600 cursor-pointer"
     }`}
   >
