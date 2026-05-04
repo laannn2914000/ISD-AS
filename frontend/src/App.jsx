@@ -134,17 +134,53 @@ function App() {
           }
         />
 
-        <Route path="/report-system" element={<ReportSystem />} />
-        <Route path="/manager-reports" element={<ManagerReportSystem />} />
-        <Route path="/employee-reports" element={<EmployeeReportSystem />} />
-        <Route path="/reports" element={<ReportSystem />} />
+        <Route
+          path="/report-system"
+          element={
+            <ProtectedRoute>
+              <ReportSystem />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manager-reports"
+          element={
+            <ProtectedRoute>
+              <ManagerReportSystem />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/employee-reports"
+          element={
+            <ProtectedRoute>
+              <EmployeeReportSystem />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <ReportSystem />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/manager-finance-reports"
-          element={<ManagerFinanceReportSystem />}
+          element={
+            <ProtectedRoute>
+              <ManagerFinanceReportSystem />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/admin-finance-reports"
-          element={<AdminFinanceReportSystem />}
+          element={
+            <ProtectedRoute>
+              <AdminFinanceReportSystem />
+            </ProtectedRoute>
+          }
         />
 
         {/* Catch-all: Nếu vào link lạ thì về trang chủ */}

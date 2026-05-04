@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -16,10 +16,17 @@ import {
   XCircle,
   Eye,
   Plus,
+  ArrowLeft,
+  Save,
+  Send,
 } from "lucide-react";
 import ReportDetailModal from "./ReportDetailModal";
 
 const ManagerReportSystem = () => {
+  const user = JSON.parse(localStorage.getItem("user")) || {
+    fullName: "Người quản lý",
+    dept: "Phòng Kế toán",
+  };
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,6 +37,29 @@ const ManagerReportSystem = () => {
     type: "",
     id: "",
   });
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [step, setStep] = useState(1);
+  const [template, setTemplate] = useState(null);
+  const [formData, setFormData] = useState({
+    companyName: "CÔNG TY CỔ PHẦN KẾ TOÁN BÁCH MỸ",
+    reportNumber: "......./BC-AX",
+    location: "Hà Nội",
+    recipient: "Ban Giám đốc Công ty Cổ phần Kế toán Bách Mỹ",
+    reporter: user.fullName,
+    dept: user.dept || "Phòng Kế toán",
+    title: "",
+    income: 0,
+    expense: 0,
+    detail: "",
+    done: "",
+    issues: "",
+    plan: "",
+    kpi: 0,
+    analysis: "",
+  });
+  const reportRef = useRef();
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [rejectComment, setRejectComment] = useState("");
   const [selectedReport, setSelectedReport] = useState(null);
 
@@ -47,19 +77,25 @@ const ManagerReportSystem = () => {
       const reportId = isReportCode(trimmed) ? trimmed : "";
       const res = await axios.get(`${API_URL}/api/reports/search`, {
         params: {
-          ...(reportId ? { reportId } : { name: trimmed }),
+          ...(reportId ? { reportId } : { search: trimmed }),
           status: statusFilter === "All" ? "" : statusFilter,
+          page,
+          limit: 10,
         },
         headers: { Authorization: `Bearer ${token}` },
       });
-      setReports(res.data);
+      const data = res.data;
+      setReports(data.reports || []);
+      setTotalPages(data.totalPages || 1);
+      setPage(data.currentPage || page);
     } catch (error) {
       console.error("Lỗi tìm kiếm báo cáo:", error);
       setReports([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  }, [API_URL, searchTerm, statusFilter, token]);
+  }, [API_URL, searchTerm, statusFilter, token, page]);
 
   useEffect(() => {
     const timer = setTimeout(fetchReports, 300);
@@ -86,6 +122,50 @@ const ManagerReportSystem = () => {
   const confirmLogout = () => {
     localStorage.clear();
     window.location.href = "/";
+  };
+
+  const handleSubmitReport = async (status = "Submitted") => {
+    if (!formData.title.trim()) {
+      alert("Vui lòng nhập tiêu đề báo cáo.");
+      return;
+    }
+    try {
+      await axios.post(
+        `${API_URL}/api/reports/create`,
+        {
+          name: formData.title,
+          type: template || "finance",
+          content: formData,
+          status,
+          dept: formData.dept,
+          creatorName: formData.reporter,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      setShowCreateModal(false);
+      setStep(1);
+      setTemplate(null);
+      setFormData({
+        ...formData,
+        title: "",
+        income: 0,
+        expense: 0,
+        detail: "",
+        done: "",
+        issues: "",
+        plan: "",
+        kpi: 0,
+        analysis: "",
+      });
+      fetchReports();
+    } catch (err) {
+      alert(
+        "Lỗi khi tạo báo cáo: " +
+          (err.response?.data?.message || "Lỗi kết nối"),
+      );
+    }
   };
 
   return (
@@ -157,7 +237,10 @@ const ManagerReportSystem = () => {
               placeholder="Tìm kiếm báo cáo..."
               className="w-full pl-14 pr-6 py-3.5 bg-gray-50 rounded-full outline-none focus:ring-1 focus:ring-[#0061f2] text-sm"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
             />
           </div>
 
@@ -191,7 +274,28 @@ const ManagerReportSystem = () => {
             </div>
             <div className="flex gap-4 items-center">
               <button
-                onClick={() => navigate("/employee-create-report")}
+                onClick={() => {
+                  setShowCreateModal(true);
+                  setStep(1);
+                  setTemplate(null);
+                  setFormData({
+                    companyName: "CÔNG TY CỔ PHẦN KẾ TOÁN BÁCH MỸ",
+                    reportNumber: "......./BC-AX",
+                    location: "Hà Nội",
+                    recipient: "Ban Giám đốc Công ty Cổ phần Kế toán Bách Mỹ",
+                    reporter: user.fullName,
+                    dept: user.dept || "Phòng Kế toán",
+                    title: "",
+                    income: 0,
+                    expense: 0,
+                    detail: "",
+                    done: "",
+                    issues: "",
+                    plan: "",
+                    kpi: 0,
+                    analysis: "",
+                  });
+                }}
                 className="flex items-center gap-2 px-6 py-2.5 bg-[#0061f2] text-white rounded-xl font-bold hover:bg-blue-700 shadow-md transition-all active:scale-95"
               >
                 <Plus size={18} /> Tạo báo cáo
@@ -201,7 +305,10 @@ const ManagerReportSystem = () => {
                   (s) => (
                     <button
                       key={s}
-                      onClick={() => setStatusFilter(s)}
+                      onClick={() => {
+                        setStatusFilter(s);
+                        setPage(1);
+                      }}
                       className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${
                         statusFilter === s
                           ? "bg-blue-600 text-white shadow-md"
@@ -326,6 +433,33 @@ const ManagerReportSystem = () => {
               </p>
             </div>
           )}
+
+          {reports.length > 0 && (
+            <div className="mt-6 flex items-center justify-between px-6 py-4 bg-white border-t border-gray-100 rounded-b-3xl">
+              <p className="text-sm text-gray-500">
+                Trang {page} trên {totalPages} - {reports.length} báo cáo hiển
+                thị
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Trước
+                </button>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() =>
+                    setPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -369,6 +503,363 @@ const ManagerReportSystem = () => {
               >
                 {showConfirmModal.type === "Approve" ? "Duyệt" : "Từ chối"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-6xl rounded-[32px] p-8 shadow-2xl overflow-hidden">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-800">
+                  Tạo báo cáo mới
+                </h3>
+                <p className="text-gray-500 text-sm mt-1">
+                  Giao diện tạo báo cáo giống nhân viên, nhưng nằm trong modal
+                  của manager.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setStep(1);
+                  setTemplate(null);
+                }}
+                className="text-gray-400 hover:text-gray-700 transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+
+            <div className="flex flex-col xl:flex-row gap-10">
+              <div className="xl:w-1/2">
+                <div className="flex items-center gap-3 mb-6">
+                  {step === 2 && (
+                    <button
+                      onClick={() => setStep(1)}
+                      className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    >
+                      <ArrowLeft size={20} />
+                    </button>
+                  )}
+                  <div>
+                    <h4 className="text-lg font-bold text-gray-800">
+                      {step === 1
+                        ? "Chọn mẫu báo cáo"
+                        : "Nhập nội dung báo cáo"}
+                    </h4>
+                    <p className="text-sm text-gray-500">
+                      {step === 1
+                        ? "Chọn mẫu giống trang tạo báo cáo nhân viên."
+                        : "Hoàn thiện nội dung và gửi phê duyệt."}
+                    </p>
+                  </div>
+                </div>
+
+                {step === 1 ? (
+                  <div className="grid gap-4">
+                    {[
+                      {
+                        id: "finance",
+                        name: "Báo cáo tài chính",
+                        desc: "Thu/chi, doanh thu và dòng tiền",
+                      },
+                      {
+                        id: "daily",
+                        name: "Báo cáo hàng ngày",
+                        desc: "Công việc và kế hoạch ngày tiếp theo",
+                      },
+                      {
+                        id: "business",
+                        name: "Báo cáo kinh doanh",
+                        desc: "Doanh số, KPI và phân tích",
+                      },
+                    ].map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setTemplate(item.id);
+                          setFormData({
+                            ...formData,
+                            title: item.name.toUpperCase(),
+                          });
+                          setStep(2);
+                        }}
+                        className={`rounded-3xl p-6 border transition-all text-left ${
+                          template === item.id
+                            ? "border-blue-600 bg-blue-50"
+                            : "border-gray-200 bg-white hover:border-blue-300"
+                        }`}
+                      >
+                        <div className="font-bold text-gray-900 mb-2">
+                          {item.name}
+                        </div>
+                        <div className="text-gray-500">{item.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-3 pb-4 border-b border-gray-100">
+                      <h4 className="text-[10px] font-bold text-blue-600 uppercase">
+                        Thông tin chung
+                      </h4>
+                      <input
+                        type="text"
+                        placeholder="Tên công ty"
+                        className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                        value={formData.companyName}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            companyName: e.target.value,
+                          })
+                        }
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          placeholder="Số hiệu"
+                          className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                          value={formData.reportNumber}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              reportNumber: e.target.value,
+                            })
+                          }
+                        />
+                        <input
+                          type="text"
+                          placeholder="Địa danh"
+                          className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                          value={formData.location}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              location: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Kính gửi"
+                        className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                        value={formData.recipient}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            recipient: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="text-[10px] font-bold text-blue-600 uppercase">
+                        Nội dung chi tiết
+                      </h4>
+                      <input
+                        type="text"
+                        placeholder="Tiêu đề báo cáo"
+                        className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                        value={formData.title}
+                        onChange={(e) =>
+                          setFormData({ ...formData, title: e.target.value })
+                        }
+                      />
+                      {template === "finance" && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <input
+                            type="number"
+                            placeholder="Tổng thu"
+                            className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                            value={formData.income || ""}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                income: e.target.value,
+                              })
+                            }
+                          />
+                          <input
+                            type="number"
+                            placeholder="Tổng chi"
+                            className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                            value={formData.expense || ""}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                expense: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      )}
+                      {template === "finance" && (
+                        <textarea
+                          rows="4"
+                          placeholder="Chi tiết"
+                          className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                          value={formData.detail}
+                          onChange={(e) =>
+                            setFormData({ ...formData, detail: e.target.value })
+                          }
+                        />
+                      )}
+                      {template === "daily" && (
+                        <>
+                          <textarea
+                            rows="3"
+                            placeholder="Việc đã xong"
+                            className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                            value={formData.done}
+                            onChange={(e) =>
+                              setFormData({ ...formData, done: e.target.value })
+                            }
+                          />
+                          <textarea
+                            rows="2"
+                            placeholder="Khó khăn"
+                            className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                            value={formData.issues}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                issues: e.target.value,
+                              })
+                            }
+                          />
+                          <textarea
+                            rows="2"
+                            placeholder="Kế hoạch mai"
+                            className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                            value={formData.plan}
+                            onChange={(e) =>
+                              setFormData({ ...formData, plan: e.target.value })
+                            }
+                          />
+                        </>
+                      )}
+                      {template === "business" && (
+                        <>
+                          <input
+                            type="number"
+                            placeholder="KPI (%)"
+                            className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                            value={formData.kpi || ""}
+                            onChange={(e) =>
+                              setFormData({ ...formData, kpi: e.target.value })
+                            }
+                          />
+                          <textarea
+                            rows="4"
+                            placeholder="Phân tích"
+                            className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                            value={formData.analysis}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                analysis: e.target.value,
+                              })
+                            }
+                          />
+                        </>
+                      )}
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center gap-3 pt-4">
+                      <button
+                        onClick={() => handleSubmitReport("Draft")}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-600 rounded-3xl font-bold hover:bg-gray-200"
+                      >
+                        <Save size={18} /> Lưu nháp
+                      </button>
+                      <button
+                        onClick={() => handleSubmitReport("Submitted")}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-3xl font-bold hover:bg-blue-700"
+                      >
+                        <Send size={18} /> Gửi phê duyệt
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="xl:w-1/2 bg-gray-100 rounded-[32px] p-6 overflow-y-auto max-h-[80vh]">
+                <div
+                  ref={reportRef}
+                  className="bg-white p-8 rounded-[32px] min-h-[600px]"
+                >
+                  <div className="flex justify-between mb-8">
+                    <div>
+                      <p className="font-bold uppercase">
+                        {formData.companyName}
+                      </p>
+                      <p className="text-sm">Số: {formData.reportNumber}</p>
+                    </div>
+                    <div className="text-right text-sm italic">
+                      <p>
+                        {formData.location}, ngày {new Date().getDate()} tháng{" "}
+                        {new Date().getMonth() + 1} năm{" "}
+                        {new Date().getFullYear()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-center mb-8">
+                    <h2 className="text-xl font-bold uppercase">
+                      {formData.title || "TIÊU ĐỀ BÁO CÁO"}
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-2">
+                      {template === "finance"
+                        ? "Báo cáo tài chính"
+                        : template === "daily"
+                          ? "Báo cáo hàng ngày"
+                          : template === "business"
+                            ? "Báo cáo kinh doanh"
+                            : "Loại báo cáo"}
+                    </p>
+                  </div>
+                  <div className="space-y-4 text-sm">
+                    <p>
+                      <span className="font-bold">Kính gửi:</span>{" "}
+                      {formData.recipient}
+                    </p>
+                    <p>
+                      <span className="font-bold">Người báo cáo:</span>{" "}
+                      {formData.reporter}
+                    </p>
+                    <p>
+                      <span className="font-bold">Bộ phận:</span>{" "}
+                      {formData.dept}
+                    </p>
+                    <div className="mt-4 border-l-4 border-gray-200 pl-4 space-y-3">
+                      {template === "finance" && (
+                        <>
+                          <p>- Tổng thu: {formData.income || 0}</p>
+                          <p>- Tổng chi: {formData.expense || 0}</p>
+                          <p>- Chi tiết: {formData.detail || "..."}</p>
+                        </>
+                      )}
+                      {template === "daily" && (
+                        <>
+                          <p>- Việc đã xong: {formData.done || "..."}</p>
+                          <p>- Khó khăn: {formData.issues || "..."}</p>
+                          <p>- Kế hoạch: {formData.plan || "..."}</p>
+                        </>
+                      )}
+                      {template === "business" && (
+                        <>
+                          <p>- KPI: {formData.kpi || 0}%</p>
+                          <p>- Phân tích: {formData.analysis || "..."}</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

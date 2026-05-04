@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -24,6 +24,8 @@ const ReportSystem = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState({
     show: false,
@@ -42,31 +44,39 @@ const ReportSystem = () => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    fetchReports();
-  }, [statusFilter]);
+  const isReportCode = (value) => /^BC-\d+$/i.test(value.trim());
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
-      // Lọc bỏ báo cáo tài chính - chỉ hiển thị báo cáo hàng ngày và kinh doanh
+      const trimmed = searchTerm.trim();
+      const reportId = isReportCode(trimmed) ? trimmed : "";
       const res = await axios.get(`${API_URL}/api/reports/search`, {
         params: {
-          name: searchTerm,
+          ...(reportId ? { reportId } : { search: trimmed }),
           status: statusFilter === "All" ? "" : statusFilter,
-          // Không lọc theo type để lấy tất cả, sẽ lọc client-side
+          page,
+          limit: 10,
         },
         headers: { Authorization: `Bearer ${token}` },
       });
-      // Lọc client-side: bỏ báo cáo tài chính
-      const filtered = res.data.filter((r) => r.type !== "finance");
+      const data = res.data;
+      const filtered = (data.reports || []).filter((r) => r.type !== "finance");
       setReports(filtered);
+      setTotalPages(data.totalPages || 1);
+      setPage(data.currentPage || page);
     } catch (err) {
       setReports([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL, searchTerm, statusFilter, token, page]);
+
+  useEffect(() => {
+    const timer = setTimeout(fetchReports, 300);
+    return () => clearTimeout(timer);
+  }, [fetchReports]);
 
   const handleAction = async () => {
     const { type, id } = showConfirmModal;
@@ -175,7 +185,10 @@ const ReportSystem = () => {
               placeholder="Tìm kiếm báo cáo..."
               className="w-full pl-14 pr-6 py-3.5 bg-gray-50 rounded-full outline-none focus:ring-1 focus:ring-yellow-500 text-sm"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
               onKeyPress={(e) => e.key === "Enter" && fetchReports()}
             />
           </div>
@@ -216,7 +229,10 @@ const ReportSystem = () => {
               <select
                 className="bg-white border border-gray-100 p-2.5 rounded-xl text-sm font-bold outline-none shadow-sm"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
               >
                 <option value="All">Tất cả trạng thái</option>
                 <option value="Submitted">Chờ duyệt</option>
@@ -329,6 +345,33 @@ const ReportSystem = () => {
               </tbody>
             </table>
           </div>
+
+          {reports.length > 0 && (
+            <div className="mt-6 flex items-center justify-between px-6 py-4 bg-white border-t border-gray-100 rounded-b-3xl">
+              <p className="text-sm text-gray-500">
+                Trang {page} trên {totalPages} - {reports.length} báo cáo hiển
+                thị
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Trước
+                </button>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() =>
+                    setPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 

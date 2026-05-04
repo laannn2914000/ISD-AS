@@ -52,28 +52,8 @@ const verifyToken = (req, res, next) => {
 // --- TÍCH HỢP ROUTE REPORT TẠI ĐÂY ---
 app.use("/api/reports", verifyToken, reportRoutes);
 
-// 13. API TÌM KIẾM BÁO CÁO CHO ADMIN, MANAGER, EMPLOYEE (Đặt sau reportRoutes)
+// 13. API TÌM KIẾM BÁO CÁO CHO ADMIN, MANAGER, EMPLOYEE (Được xử lý trong reportRoutes.js)
 const Report = require("./models/Report");
-app.get("/api/reports/search", verifyToken, async (req, res) => {
-  try {
-    const { name = "", status = "", type = "", creator = "" } = req.query;
-    let filter = {};
-    if (name) filter.name = { $regex: name, $options: "i" };
-    if (status) filter.status = status;
-    if (type) filter.type = type;
-    if (creator) filter.creatorId = creator;
-
-    // Nếu là employee chỉ cho xem báo cáo của mình
-    if (req.user.role === "nhân viên") {
-      filter.creatorId = req.user.id;
-    }
-
-    const reports = await Report.find(filter).sort({ createdAt: -1 }).limit(50);
-    res.json(reports);
-  } catch (err) {
-    res.status(500).json({ message: "Lỗi tìm kiếm báo cáo" });
-  }
-});
 
 // 4. ROUTE ĐĂNG NHẬP
 app.post("/api/login", async (req, res) => {

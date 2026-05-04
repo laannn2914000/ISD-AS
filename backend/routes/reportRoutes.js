@@ -44,21 +44,40 @@ router.get("/my-reports", async (req, res) => {
 // 3. SEARCH & FILTER (Manager & Admin dùng để quản lý)
 router.get("/search", async (req, res) => {
   try {
-    const { name, reportId, creator, status, startDate, endDate, type } =
-      req.query;
+    const {
+      search,
+      reportId,
+      creator,
+      status,
+      startDate,
+      endDate,
+      type,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const pageNumber = Math.max(1, parseInt(page, 10) || 1);
+    const limitNumber = Math.max(1, Math.min(parseInt(limit, 10) || 10, 50));
     let query = {};
 
     // Phân quyền: Employee chỉ thấy bài mình, Manager & Admin thấy tất cả
     if (req.user.role === "nhân viên") {
       query.creatorId = req.user.id;
     }
-    // Manager và Admin xem tất cả báo cáo (bỏ lọc theo dept)
 
-    if (name) query.name = { $regex: name, $options: "i" };
-    if (reportId) query.reportId = reportId;
-    if (creator) query.creatorName = { $regex: creator, $options: "i" };
-    if (status && status !== "All") query.status = status;
-    if (type) query.type = type;
+    if (reportId) {
+      query.reportId = reportId;
+    } else {
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: "i" } },
+          { creatorName: { $regex: search, $options: "i" } },
+        ];
+      }
+      if (creator) query.creatorName = { $regex: creator, $options: "i" };
+      if (status && status !== "All") query.status = status;
+      if (type) query.type = type;
+    }
 
     if (startDate || endDate) {
       query.createdAt = {};
@@ -66,8 +85,18 @@ router.get("/search", async (req, res) => {
       if (endDate) query.createdAt.$lte = new Date(endDate);
     }
 
-    const reports = await Report.find(query).sort({ createdAt: -1 });
-    res.json(reports);
+    const totalCount = await Report.countDocuments(query);
+    const reports = await Report.find(query)
+      .sort({ createdAt: -1 })
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber);
+
+    res.json({
+      reports,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limitNumber),
+      currentPage: pageNumber,
+    });
   } catch (err) {
     res.status(500).json({ message: "Lỗi hệ thống" });
   }
@@ -146,7 +175,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// 5. XÓA BÁO CÁO (Chỉ xóa được Draft)
+// 5. XÓA BÁO CÁO
 router.delete("/:id", async (req, res) => {
   try {
     const report = await Report.findById(req.params.id);
@@ -157,8 +186,11 @@ router.delete("/:id", async (req, res) => {
 
     if (!isOwner && !isAdmin)
       return res.status(403).json({ message: "Không có quyền" });
-    if (report.status !== "Draft" && !isAdmin) {
-      return res.status(400).json({ message: "Chỉ được xóa bản nháp" });
+
+    if (isOwner && report.status === "Approved") {
+      return res
+        .status(400)
+        .json({ message: "Không thể xóa báo cáo đã được duyệt" });
     }
 
     await Report.findByIdAndDelete(req.params.id);

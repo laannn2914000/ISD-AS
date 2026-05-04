@@ -22,6 +22,8 @@ const EmployeeReportSystem = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedReport, setSelectedReport] = useState(null);
 
   const navigate = useNavigate();
@@ -38,23 +40,22 @@ const EmployeeReportSystem = () => {
   const fetchMyReports = useCallback(async () => {
     setLoading(true);
     try {
-      const trimmed = searchTerm.trim();
-      const reportId = isReportCode(trimmed) ? trimmed : "";
-      const res = await axios.get(`${API_URL}/api/reports/search`, {
-        params: {
-          ...(reportId ? { reportId } : { name: trimmed }),
-          status: statusFilter === "All" ? "" : statusFilter,
-        },
+      const res = await axios.get(`${API_URL}/api/reports/my-reports`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setReports(res.data);
+      const data = res.data;
+      setReports(data || []);
+      setTotalPages(1);
+      setPage(1);
     } catch (error) {
-      console.error("Lỗi tìm kiếm báo cáo:", error);
+      console.error("Lỗi lấy báo cáo của tôi:", error);
       setReports([]);
+      setTotalPages(1);
+      setPage(1);
     } finally {
       setLoading(false);
     }
-  }, [API_URL, searchTerm, statusFilter, token]);
+  }, [API_URL, token]);
 
   useEffect(() => {
     const timer = setTimeout(fetchMyReports, 300);
@@ -65,6 +66,18 @@ const EmployeeReportSystem = () => {
     localStorage.clear();
     window.location.href = "/";
   };
+
+  const visibleReports = reports.filter((report) => {
+    const searchValue = searchTerm.trim().toLowerCase();
+    const matchesSearch = searchValue
+      ? report.name?.toLowerCase().includes(searchValue) ||
+        report.reportId?.toLowerCase().includes(searchValue) ||
+        report.creatorName?.toLowerCase().includes(searchValue)
+      : true;
+    const matchesStatus =
+      statusFilter === "All" ? true : report.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans relative">
@@ -129,7 +142,10 @@ const EmployeeReportSystem = () => {
               placeholder="Tìm kiếm báo cáo đã gửi..."
               className="w-full pl-14 pr-6 py-3.5 bg-gray-50 rounded-full outline-none focus:ring-1 focus:ring-[#0061f2] text-sm"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
             />
           </div>
 
@@ -166,7 +182,10 @@ const EmployeeReportSystem = () => {
                 (s) => (
                   <button
                     key={s}
-                    onClick={() => setStatusFilter(s)}
+                    onClick={() => {
+                      setStatusFilter(s);
+                      setPage(1);
+                    }}
                     className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${
                       statusFilter === s
                         ? "bg-blue-600 text-white shadow-md"
@@ -209,8 +228,8 @@ const EmployeeReportSystem = () => {
                       />
                     </td>
                   </tr>
-                ) : reports.length > 0 ? (
-                  reports.map((report) => (
+                ) : visibleReports.length > 0 ? (
+                  visibleReports.map((report) => (
                     <tr
                       key={report._id}
                       className="text-sm hover:bg-gray-50/50 transition-colors"
@@ -253,17 +272,54 @@ const EmployeeReportSystem = () => {
                           >
                             <Eye size={18} />
                           </button>
-                          {report.status === "Draft" && (
-                            <button
-                              className="p-2 text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-all"
-                              onClick={() =>
-                                navigate(`/employee-edit-report/${report._id}`)
-                              }
-                              title="Chỉnh sửa báo cáo"
-                            >
-                              <RefreshCcw size={18} />
-                            </button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {report.status === "Draft" && (
+                              <button
+                                className="p-2 text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-all"
+                                onClick={() =>
+                                  navigate(
+                                    `/employee-edit-report/${report._id}`,
+                                  )
+                                }
+                                title="Chỉnh sửa báo cáo"
+                              >
+                                <RefreshCcw size={18} />
+                              </button>
+                            )}
+                            {report.status !== "Approved" && (
+                              <button
+                                className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                onClick={async () => {
+                                  if (
+                                    !window.confirm(
+                                      "Bạn có chắc chắn muốn xóa báo cáo này?",
+                                    )
+                                  )
+                                    return;
+                                  try {
+                                    await axios.delete(
+                                      `${API_URL}/api/reports/${report._id}`,
+                                      {
+                                        headers: {
+                                          Authorization: `Bearer ${token}`,
+                                        },
+                                      },
+                                    );
+                                    fetchMyReports();
+                                  } catch (err) {
+                                    alert(
+                                      "Không thể xóa báo cáo: " +
+                                        (err.response?.data?.message ||
+                                          "Lỗi kết nối"),
+                                    );
+                                  }
+                                }}
+                                title="Xóa báo cáo"
+                              >
+                                <XCircle size={18} />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -278,6 +334,33 @@ const EmployeeReportSystem = () => {
               </tbody>
             </table>
           </div>
+
+          {visibleReports.length > 0 && (
+            <div className="mt-6 flex items-center justify-between px-6 py-4 bg-white border-t border-gray-100 rounded-b-3xl">
+              <p className="text-sm text-gray-500">
+                Trang {page} trên {totalPages} - {visibleReports.length} báo cáo
+                hiển thị
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Trước
+                </button>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() =>
+                    setPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 

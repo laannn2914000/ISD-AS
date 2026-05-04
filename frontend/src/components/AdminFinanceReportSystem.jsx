@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -25,6 +25,8 @@ const AdminFinanceReportSystem = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState({
     show: false,
@@ -43,29 +45,39 @@ const AdminFinanceReportSystem = () => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    fetchReports();
-  }, [statusFilter]);
+  const isReportCode = (value) => /^BC-\d+$/i.test(value.trim());
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
-      // Chỉ lấy báo cáo tài chính (type = finance)
+      const trimmed = searchTerm.trim();
+      const reportId = isReportCode(trimmed) ? trimmed : "";
       const res = await axios.get(`${API_URL}/api/reports/search`, {
         params: {
-          name: searchTerm,
+          ...(reportId ? { reportId } : { search: trimmed }),
           status: statusFilter === "All" ? "" : statusFilter,
-          type: "finance", // Lọc theo loại báo cáo tài chính
+          type: "finance",
+          page,
+          limit: 10,
         },
         headers: { Authorization: `Bearer ${token}` },
       });
-      setReports(res.data);
+      const data = res.data;
+      setReports(data.reports || []);
+      setTotalPages(data.totalPages || 1);
+      setPage(data.currentPage || page);
     } catch (err) {
       setReports([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL, searchTerm, statusFilter, token, page]);
+
+  useEffect(() => {
+    const timer = setTimeout(fetchReports, 300);
+    return () => clearTimeout(timer);
+  }, [fetchReports]);
 
   const handleAction = async () => {
     const { type, id } = showConfirmModal;
@@ -176,7 +188,10 @@ const AdminFinanceReportSystem = () => {
               placeholder="Tìm kiếm báo cáo tài chính..."
               className="w-full pl-14 pr-6 py-3.5 bg-gray-50 rounded-full outline-none focus:ring-1 focus:ring-yellow-500 text-sm"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
               onKeyDown={(e) => e.key === "Enter" && fetchReports()}
             />
           </div>
@@ -213,7 +228,10 @@ const AdminFinanceReportSystem = () => {
               {["All", "Submitted", "Approved", "Rejected"].map((s) => (
                 <button
                   key={s}
-                  onClick={() => setStatusFilter(s)}
+                  onClick={() => {
+                    setStatusFilter(s);
+                    setPage(1);
+                  }}
                   className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${
                     statusFilter === s
                       ? "bg-gray-900 text-white shadow-md"
@@ -223,10 +241,10 @@ const AdminFinanceReportSystem = () => {
                   {s === "All"
                     ? "Tất cả"
                     : s === "Submitted"
-                      ? "Đợi duyệt"
+                      ? "Chờ duyệt"
                       : s === "Approved"
                         ? "Đã duyệt"
-                        : "Đã từ chối"}
+                        : "Từ chối"}
                 </button>
               ))}
             </div>
@@ -335,6 +353,33 @@ const AdminFinanceReportSystem = () => {
               <p className="text-gray-400 font-medium">
                 Hiện không có báo cáo tài chính nào cần xử lý
               </p>
+            </div>
+          )}
+
+          {reports.length > 0 && (
+            <div className="mt-6 flex items-center justify-between px-6 py-4 bg-white border-t border-gray-100 rounded-b-3xl">
+              <p className="text-sm text-gray-500">
+                Trang {page} trên {totalPages} - {reports.length} báo cáo hiển
+                thị
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Trước
+                </button>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() =>
+                    setPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Sau
+                </button>
+              </div>
             </div>
           )}
         </main>

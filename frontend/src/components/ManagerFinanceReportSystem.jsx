@@ -30,6 +30,8 @@ const ManagerFinanceReportSystem = () => {
     type: "",
     id: "",
   });
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [rejectComment, setRejectComment] = useState("");
   const [selectedReport, setSelectedReport] = useState(null);
 
@@ -45,23 +47,28 @@ const ManagerFinanceReportSystem = () => {
     try {
       const trimmed = searchTerm.trim();
       const reportId = isReportCode(trimmed) ? trimmed : "";
-      // Chỉ lấy báo cáo tài chính (type = finance)
       const res = await axios.get(`${API_URL}/api/reports/search`, {
         params: {
-          ...(reportId ? { reportId } : { name: trimmed }),
+          ...(reportId ? { reportId } : { search: trimmed }),
           status: statusFilter === "All" ? "" : statusFilter,
-          type: "finance", // Lọc theo loại báo cáo tài chính
+          type: "finance",
+          page,
+          limit: 10,
         },
         headers: { Authorization: `Bearer ${token}` },
       });
-      setReports(res.data);
+      const data = res.data;
+      setReports(data.reports || []);
+      setTotalPages(data.totalPages || 1);
+      setPage(data.currentPage || page);
     } catch (error) {
       console.error("Lỗi tìm kiếm báo cáo tài chính:", error);
       setReports([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  }, [API_URL, searchTerm, statusFilter, token]);
+  }, [API_URL, searchTerm, statusFilter, token, page]);
 
   useEffect(() => {
     const timer = setTimeout(fetchReports, 300);
@@ -160,7 +167,10 @@ const ManagerFinanceReportSystem = () => {
               placeholder="Tìm kiếm báo cáo tài chính..."
               className="w-full pl-14 pr-6 py-3.5 bg-gray-50 rounded-full outline-none focus:ring-1 focus:ring-[#0061f2] text-sm"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
             />
           </div>
 
@@ -319,6 +329,33 @@ const ManagerFinanceReportSystem = () => {
               <p className="text-gray-400 font-medium">
                 Hiện không có báo cáo tài chính nào cần xử lý
               </p>
+            </div>
+          )}
+
+          {reports.length > 0 && (
+            <div className="mt-6 flex items-center justify-between px-6 py-4 bg-white border-t border-gray-100 rounded-b-3xl">
+              <p className="text-sm text-gray-500">
+                Trang {page} trên {totalPages} - {reports.length} báo cáo hiển
+                thị
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Trước
+                </button>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() =>
+                    setPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Sau
+                </button>
+              </div>
             </div>
           )}
         </main>
