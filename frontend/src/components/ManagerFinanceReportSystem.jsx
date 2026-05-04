@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -35,36 +35,38 @@ const ManagerFinanceReportSystem = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const user = JSON.parse(localStorage.getItem("user")) || {
-    fullName: "Người dùng",
-    role: "manager",
-  };
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    fetchReports();
-  }, [statusFilter]);
+  const isReportCode = (value) => /^BC-\d+$/i.test(value.trim());
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
+      const trimmed = searchTerm.trim();
+      const reportId = isReportCode(trimmed) ? trimmed : "";
       // Chỉ lấy báo cáo tài chính (type = finance)
       const res = await axios.get(`${API_URL}/api/reports/search`, {
         params: {
-          name: searchTerm,
+          ...(reportId ? { reportId } : { name: trimmed }),
           status: statusFilter === "All" ? "" : statusFilter,
           type: "finance", // Lọc theo loại báo cáo tài chính
         },
         headers: { Authorization: `Bearer ${token}` },
       });
       setReports(res.data);
-    } catch (err) {
+    } catch (error) {
+      console.error("Lỗi tìm kiếm báo cáo tài chính:", error);
       setReports([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL, searchTerm, statusFilter, token]);
+
+  useEffect(() => {
+    const timer = setTimeout(fetchReports, 300);
+    return () => clearTimeout(timer);
+  }, [fetchReports]);
 
   const handleAction = async () => {
     const { type, id } = showConfirmModal;
@@ -157,6 +159,8 @@ const ManagerFinanceReportSystem = () => {
               type="text"
               placeholder="Tìm kiếm báo cáo tài chính..."
               className="w-full pl-14 pr-6 py-3.5 bg-gray-50 rounded-full outline-none focus:ring-1 focus:ring-[#0061f2] text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
@@ -189,25 +193,29 @@ const ManagerFinanceReportSystem = () => {
               </p>
             </div>
             <div className="flex bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
-              {["All", "Submitted", "Approved", "Rejected"].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStatusFilter(s)}
-                  className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${
-                    statusFilter === s
-                      ? "bg-blue-600 text-white shadow-md"
-                      : "text-gray-500 hover:bg-gray-50"
-                  }`}
-                >
-                  {s === "All"
-                    ? "Tất cả"
-                    : s === "Submitted"
-                      ? "Đợi duyệt"
-                      : s === "Approved"
-                        ? "Đã duyệt"
-                        : "Đã từ chối"}
-                </button>
-              ))}
+              {["All", "Draft", "Submitted", "Approved", "Rejected"].map(
+                (s) => (
+                  <button
+                    key={s}
+                    onClick={() => setStatusFilter(s)}
+                    className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${
+                      statusFilter === s
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    {s === "All"
+                      ? "Tất cả"
+                      : s === "Draft"
+                        ? "Nháp"
+                        : s === "Submitted"
+                          ? "Chờ duyệt"
+                          : s === "Approved"
+                            ? "Đã duyệt"
+                            : "Từ chối"}
+                  </button>
+                ),
+              )}
             </div>
           </div>
 

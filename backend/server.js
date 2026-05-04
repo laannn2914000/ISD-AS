@@ -283,6 +283,24 @@ app.get("/api/users", verifyToken, async (req, res) => {
   res.json(managers);
 });
 
+app.patch("/api/users/toggle-lock/:id", verifyToken, async (req, res) => {
+  if (req.user.role !== "admin")
+    return res.status(403).json({ message: "Quyền Admin!" });
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user)
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+
+    user.isLocked = !user.isLocked;
+    if (!user.isLocked) user.loginAttempts = 0;
+    await user.save();
+
+    res.json({ isLocked: user.isLocked });
+  } catch (err) {
+    res.status(400).json({ message: "Lỗi thao tác" });
+  }
+});
+
 app.post("/api/users/register", verifyToken, async (req, res) => {
   try {
     const { fullName, email, phone, dept, password, role } = req.body;

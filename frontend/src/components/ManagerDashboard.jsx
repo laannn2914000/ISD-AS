@@ -37,36 +37,49 @@ const ManagerDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [pendingReports, setPendingReports] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
-
-  const user = JSON.parse(localStorage.getItem("user")) || {
-    fullName: "Manager",
-    role: "manager",
-    email: "",
-  };
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const token = localStorage.getItem("token");
+
+  const filteredPendingReports = pendingReports.filter((report) => {
+    const q = searchTerm.toLowerCase();
+    return (
+      report.name?.toLowerCase().includes(q) ||
+      report.creatorName?.toLowerCase().includes(q) ||
+      report.reportId?.toLowerCase().includes(q)
+    );
+  });
+
+  const filteredRecentActivities = recentActivities.filter((report) => {
+    const q = searchTerm.toLowerCase();
+    return (
+      report.name?.toLowerCase().includes(q) ||
+      report.creatorName?.toLowerCase().includes(q) ||
+      report.reportId?.toLowerCase().includes(q)
+    );
+  });
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
         setLoading(true);
+        const config = {
+          headers: { Authorization: `Bearer ${token}` },
+        };
         const [statsRes, pendingRes, recentRes] = await Promise.all([
-          axios.get(`${API_URL}/api/manager/stats`),
-          axios.get(`${API_URL}/api/manager/pending-reports`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`${API_URL}/api/manager/recent-activities`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
+          axios.get(`${API_URL}/api/manager/stats`, config),
+          axios.get(`${API_URL}/api/manager/pending-reports`, config),
+          axios.get(`${API_URL}/api/manager/recent-activities`, config),
         ]);
         setData(statsRes.data);
         setPendingReports(pendingRes.data);
         setRecentActivities(recentRes.data);
       } catch (err) {
+        setData(null);
         setPendingReports([]);
         setRecentActivities([]);
         console.error("Lỗi tải dữ liệu Manager:", err);
@@ -158,6 +171,8 @@ const ManagerDashboard = () => {
               type="text"
               placeholder="Tìm kiếm dữ liệu quản lý..."
               className="w-full pl-14 pr-6 py-3.5 bg-gray-50 rounded-full outline-none focus:ring-1 focus:ring-[#0061f2] text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
@@ -286,8 +301,11 @@ const ManagerDashboard = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <RecentActivityTable activities={recentActivities} />
-            <PendingApprovalTable data={data} reports={pendingReports} />
+            <RecentActivityTable activities={filteredRecentActivities} />
+            <PendingApprovalTable
+              data={data}
+              reports={filteredPendingReports}
+            />
           </div>
         </main>
       </div>
@@ -449,14 +467,5 @@ const PendingApprovalTable = ({ data, reports }) => (
     </div>
   </div>
 );
-
-const chartData = [
-  { name: "Jan", value: 30 },
-  { name: "Feb", value: 45 },
-  { name: "Mar", value: 38 },
-  { name: "Apr", value: 50 },
-  { name: "May", value: 48 },
-  { name: "Jun", value: 60 },
-];
 
 export default ManagerDashboard;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import ReportDetailModal from "./ReportDetailModal";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -20,6 +20,7 @@ const EmployeeReportSystem = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
 
@@ -32,25 +33,33 @@ const EmployeeReportSystem = () => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    fetchMyReports();
-    // eslint-disable-next-line
-  }, [searchTerm]);
+  const isReportCode = (value) => /^BC-\d+$/i.test(value.trim());
 
-  const fetchMyReports = async () => {
+  const fetchMyReports = useCallback(async () => {
     setLoading(true);
     try {
+      const trimmed = searchTerm.trim();
+      const reportId = isReportCode(trimmed) ? trimmed : "";
       const res = await axios.get(`${API_URL}/api/reports/search`, {
-        params: { name: searchTerm },
+        params: {
+          ...(reportId ? { reportId } : { name: trimmed }),
+          status: statusFilter === "All" ? "" : statusFilter,
+        },
         headers: { Authorization: `Bearer ${token}` },
       });
       setReports(res.data);
-    } catch (err) {
+    } catch (error) {
+      console.error("Lỗi tìm kiếm báo cáo:", error);
       setReports([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL, searchTerm, statusFilter, token]);
+
+  useEffect(() => {
+    const timer = setTimeout(fetchMyReports, 300);
+    return () => clearTimeout(timer);
+  }, [fetchMyReports]);
 
   const confirmLogout = () => {
     localStorage.clear();
@@ -152,12 +161,31 @@ const EmployeeReportSystem = () => {
                 Trạng thái phê duyệt các chứng từ và báo cáo của bạn
               </p>
             </div>
-            <button
-              onClick={fetchMyReports}
-              className="p-3 text-[#0061f2] hover:bg-blue-50 rounded-2xl transition-all"
-            >
-              <RefreshCcw size={24} className={loading ? "animate-spin" : ""} />
-            </button>
+            <div className="flex bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
+              {["All", "Draft", "Submitted", "Approved", "Rejected"].map(
+                (s) => (
+                  <button
+                    key={s}
+                    onClick={() => setStatusFilter(s)}
+                    className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${
+                      statusFilter === s
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    {s === "All"
+                      ? "Tất cả"
+                      : s === "Draft"
+                        ? "Nháp"
+                        : s === "Submitted"
+                          ? "Chờ duyệt"
+                          : s === "Approved"
+                            ? "Đã duyệt"
+                            : "Từ chối"}
+                  </button>
+                ),
+              )}
+            </div>
           </div>
 
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
