@@ -29,11 +29,10 @@ const EditReport = () => {
   const [template, setTemplate] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  // Lấy user từ local để mặc định thông tin
-  const user = JSON.parse(localStorage.getItem("user")) || {
-    fullName: "Nguyễn Tiến Hoàng Lân",
-    role: "Nhân viên",
-    dept: "Phòng Kế toán",
+  // Helper function to get correct reports route based on user role
+  const getReportsRoute = () => {
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+    return user.role === "manager" ? "/manager-reports" : "/employee-reports";
   };
 
   // State formData chứa tất cả thông tin hành chính để chỉnh sửa
@@ -87,10 +86,10 @@ const EditReport = () => {
         });
         const report = res.data;
 
-        // Chỉ cho phép sửa báo cáo Draft
-        if (report.status !== "Draft") {
-          alert("Chỉ có thể sửa báo cáo ở trạng thái nháp!");
-          navigate("/employee-reports");
+        // Chỉ cho phép sửa báo cáo Draft và Rejected
+        if (report.status !== "Draft" && report.status !== "Rejected") {
+          alert("Chỉ có thể sửa báo cáo ở trạng thái nháp hoặc bị từ chối!");
+          navigate(getReportsRoute());
           return;
         }
 
@@ -115,7 +114,7 @@ const EditReport = () => {
       } catch (err) {
         console.error("Lỗi tải báo cáo:", err);
         alert("Không thể tải báo cáo!");
-        navigate("/employee-reports");
+        navigate(getReportsRoute());
       } finally {
         setLoading(false);
       }
@@ -148,7 +147,7 @@ const EditReport = () => {
           ? "Đã gửi phê duyệt thành công!"
           : "Đã lưu bản nháp!",
       );
-      navigate("/employee-reports");
+      navigate(getReportsRoute());
     } catch (err) {
       alert(
         "Lỗi: " + (err.response?.data?.message || "Không thể kết nối Server"),
@@ -339,7 +338,7 @@ const EditReport = () => {
       <aside className="w-[280px] bg-white border-r border-gray-100 p-6 flex flex-col text-left">
         <div
           className="flex items-center gap-3 mb-10 px-2 cursor-pointer"
-          onClick={() => navigate("/employee-reports")}
+          onClick={() => navigate(getReportsRoute())}
         >
           <div className="w-10 h-10 bg-[#0061f2] rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
             G
@@ -347,26 +346,53 @@ const EditReport = () => {
           <div>
             <h1 className="text-xl font-bold text-[#0f172a]">KTBM</h1>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">
-              Nhân viên
+              {user.role === "manager" ? "Quản lý" : "Nhân viên"}
             </p>
           </div>
         </div>
         <nav className="flex-1 space-y-1">
-          <NavItem
-            icon={<LayoutDashboard size={20} />}
-            label="Dashboard"
-            onClick={() => navigate("/employee-dashboard")}
-          />
-          <NavItem
-            icon={<FileText size={20} />}
-            label="Báo cáo của tôi"
-            onClick={() => navigate("/employee-reports")}
-          />
-          <NavItem
-            icon={<FilePlus size={20} />}
-            label="Tạo báo cáo"
-            onClick={() => navigate("/employee-create-report")}
-          />
+          {user.role === "manager" ? (
+            <>
+              <NavItem
+                icon={<LayoutDashboard size={20} />}
+                label="Dashboard"
+                onClick={() => navigate("/manager-dashboard")}
+              />
+              <NavItem
+                icon={<Users size={20} />}
+                label="Quản lý nhân viên"
+                onClick={() => navigate("/manager-employee-management")}
+              />
+              <NavItem
+                icon={<FileCheck size={20} />}
+                label="Quản lý báo cáo"
+                onClick={() => navigate("/manager-reports")}
+              />
+              <NavItem
+                icon={<BarChart3 size={20} />}
+                label="Báo cáo tài chính"
+                onClick={() => navigate("/manager-finance-reports")}
+              />
+            </>
+          ) : (
+            <>
+              <NavItem
+                icon={<LayoutDashboard size={20} />}
+                label="Dashboard"
+                onClick={() => navigate("/employee-dashboard")}
+              />
+              <NavItem
+                icon={<FileText size={20} />}
+                label="Báo cáo của tôi"
+                onClick={() => navigate("/employee-reports")}
+              />
+              <NavItem
+                icon={<FilePlus size={20} />}
+                label="Tạo báo cáo"
+                onClick={() => navigate("/employee-create-report")}
+              />
+            </>
+          )}
         </nav>
         <button
           onClick={() => navigate("/login")}
@@ -380,7 +406,7 @@ const EditReport = () => {
         <header className="h-[88px] bg-white border-b border-gray-100 flex items-center px-10 sticky top-0 z-10 shadow-sm justify-between">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate("/employee-reports")}
+              onClick={() => navigate(getReportsRoute())}
               className="p-2 hover:bg-gray-100 rounded-full"
             >
               <ArrowLeft size={20} />

@@ -126,6 +126,15 @@ function App() {
         />
 
         <Route
+          path="/manager-edit-report/:id"
+          element={
+            <ProtectedRoute>
+              <EditReport />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/employee-profile"
           element={
             <ProtectedRoute>

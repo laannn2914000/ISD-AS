@@ -15,6 +15,7 @@ import {
   CheckCircle,
   XCircle,
   Eye,
+  Trash2,
   Plus,
   ArrowLeft,
   Save,
@@ -106,11 +107,17 @@ const ManagerReportSystem = () => {
     const { type, id } = showConfirmModal;
 
     try {
-      await axios.patch(
-        `${API_URL}/api/reports/${id}/decide`,
-        { action: type, comment: rejectComment },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      if (type === "Delete") {
+        await axios.delete(`${API_URL}/api/reports/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        await axios.patch(
+          `${API_URL}/api/reports/${id}/decide`,
+          { action: type, comment: rejectComment },
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+      }
       setShowConfirmModal({ show: false, type: "", id: "" });
       setRejectComment("");
       fetchReports();
@@ -178,7 +185,7 @@ const ManagerReportSystem = () => {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white leading-tight">KTBM</h1>
-            <p className="text-[10px] text-blue-200 uppercase tracking-widest font-semibold">
+            <p className="text-[10px] text-white uppercase tracking-widest font-semibold">
               Quản lý
             </p>
           </div>
@@ -391,34 +398,50 @@ const ManagerReportSystem = () => {
                         >
                           <Eye size={18} />
                         </button>
-                        {report.status === "Submitted" && (
-                          <>
-                            <button
-                              onClick={() =>
-                                setShowConfirmModal({
-                                  show: true,
-                                  type: "Approve",
-                                  id: report._id,
-                                })
-                              }
-                              className="p-2 text-green-500 hover:bg-green-50 rounded-lg"
-                            >
-                              <CheckCircle size={18} />
-                            </button>
-                            <button
-                              onClick={() =>
-                                setShowConfirmModal({
-                                  show: true,
-                                  type: "Reject",
-                                  id: report._id,
-                                })
-                              }
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                            >
-                              <XCircle size={18} />
-                            </button>
-                          </>
-                        )}
+                        {report.creatorName === user.fullName
+                          ? report.status !== "Approved" &&
+                            report.status !== "approved" && (
+                              <button
+                                onClick={() =>
+                                  setShowConfirmModal({
+                                    show: true,
+                                    type: "Delete",
+                                    id: report._id,
+                                  })
+                                }
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )
+                          : report.status === "Submitted" && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    setShowConfirmModal({
+                                      show: true,
+                                      type: "Approve",
+                                      id: report._id,
+                                    })
+                                  }
+                                  className="p-2 text-green-500 hover:bg-green-50 rounded-lg"
+                                >
+                                  <CheckCircle size={18} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    setShowConfirmModal({
+                                      show: true,
+                                      type: "Reject",
+                                      id: report._id,
+                                    })
+                                  }
+                                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                                >
+                                  <XCircle size={18} />
+                                </button>
+                              </>
+                            )}
                       </td>
                     </tr>
                   ))}
@@ -470,11 +493,14 @@ const ManagerReportSystem = () => {
             <h3 className="text-xl font-bold text-gray-800 mb-2">
               {showConfirmModal.type === "Approve"
                 ? "Xác nhận duyệt báo cáo"
-                : "Từ chối báo cáo"}
+                : showConfirmModal.type === "Reject"
+                  ? "Từ chối báo cáo"
+                  : "Xóa báo cáo"}
             </h3>
             <p className="text-sm text-gray-500 mb-6">
-              Hành động này sẽ cập nhật trạng thái báo cáo chính thức trên hệ
-              thống.
+              {showConfirmModal.type === "Delete"
+                ? "Hành động này sẽ xóa báo cáo khỏi hệ thống. Bạn có chắc chắn?"
+                : "Hành động này sẽ cập nhật trạng thái báo cáo chính thức trên hệ thống."}
             </p>
 
             {showConfirmModal.type === "Reject" && (
@@ -917,10 +943,10 @@ const NavItem = ({
     onClick={disabled ? undefined : onClick}
     className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${
       disabled
-        ? "cursor-not-allowed"
+        ? "cursor-not-allowed text-white"
         : active
           ? "bg-white/20 text-white font-bold shadow-inner"
-          : "text-blue-100 hover:bg-white/10 hover:text-white cursor-pointer"
+          : "text-white hover:bg-white/10 hover:text-white cursor-pointer"
     }`}
   >
     {icon} <span className="text-sm">{label}</span>

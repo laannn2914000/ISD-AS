@@ -14,6 +14,7 @@ import {
   Loader2,
   Eye,
   RefreshCcw,
+  XCircle,
 } from "lucide-react";
 
 const EmployeeReportSystem = () => {

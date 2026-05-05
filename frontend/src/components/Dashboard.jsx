@@ -121,7 +121,7 @@ const Dashboard = () => {
           />
           <NavItem
             icon={<BarChart3 size={20} />}
-            label="Báo cáo tài chính"
+            label="Kiểm soát chứng từ"
             active={location.pathname === "/admin-finance-reports"}
             onClick={() => navigate("/admin-finance-reports")}
           />
@@ -134,8 +134,8 @@ const Dashboard = () => {
           <NavItem
             icon={<Users size={20} />}
             label="Quản lý nhân viên"
-            active={location.pathname === "/employee-management"}
-            onClick={() => navigate("/employee-management")}
+            active={location.pathname === "/report-system"}
+            onClick={() => navigate("/report-system")}
           />
           <NavItem
             icon={<Settings size={20} />}
@@ -304,80 +304,6 @@ const Dashboard = () => {
       )}
     </div>
   );
-
-  // --- COMPONENTS ---
-  function StatCard({ label, value, color }) {
-    return (
-      <div
-        className={`rounded-2xl p-6 flex flex-col items-center shadow-sm border border-gray-100 ${color}`}
-      >
-        <span className="text-xs font-semibold uppercase tracking-tight mb-1">
-          {label}
-        </span>
-        <span className="text-3xl font-extrabold">{value}</span>
-      </div>
-    );
-  }
-
-  function RecentDocsTable({ data }) {
-    return (
-      <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm overflow-hidden text-left">
-        <h3 className="font-bold text-gray-800 text-lg mb-6 tracking-tight">
-          Thống kê báo cáo
-        </h3>
-        <ul className="space-y-2">
-          <li className="flex justify-between text-sm">
-            <span>Tổng báo cáo:</span>{" "}
-            <span className="font-bold">{data?.totalReports || 0}</span>
-          </li>
-          <li className="flex justify-between text-sm">
-            <span>Đã duyệt:</span>{" "}
-            <span className="font-bold text-green-600">
-              {data?.approvedReports || 0}
-            </span>
-          </li>
-          <li className="flex justify-between text-sm">
-            <span>Chờ duyệt:</span>{" "}
-            <span className="font-bold text-orange-500">
-              {data?.pendingReports || 0}
-            </span>
-          </li>
-          <li className="flex justify-between text-sm">
-            <span>Từ chối:</span>{" "}
-            <span className="font-bold text-red-500">
-              {data?.rejectedReports || 0}
-            </span>
-          </li>
-        </ul>
-      </div>
-    );
-  }
-
-  function ApprovalRequestsTable({ data }) {
-    return (
-      <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm overflow-hidden text-left">
-        <h3 className="font-bold text-gray-800 text-lg mb-6 tracking-tight">
-          Tài khoản hệ thống
-        </h3>
-        <ul className="space-y-2">
-          <li className="flex justify-between text-sm">
-            <span>Quản lý:</span>{" "}
-            <span className="font-bold">{data?.totalManagers || 0}</span>
-          </li>
-          <li className="flex justify-between text-sm">
-            <span>Nhân viên:</span>{" "}
-            <span className="font-bold">{data?.totalEmployees || 0}</span>
-          </li>
-          <li className="flex justify-between text-sm">
-            <span>Bị khóa:</span>{" "}
-            <span className="font-bold text-red-500">
-              {data?.lockedUsers || 0}
-            </span>
-          </li>
-        </ul>
-      </div>
-    );
-  }
 };
 
 // --- COMPONENTS CON ---
@@ -399,6 +325,17 @@ const NavItem = ({
     }`}
   >
     {icon} <span className="text-sm">{label}</span>
+  </div>
+);
+
+const StatCard = ({ label, value, color }) => (
+  <div
+    className={`rounded-2xl p-6 flex flex-col items-center shadow-sm border border-gray-100 ${color}`}
+  >
+    <span className="text-xs font-semibold uppercase tracking-tight mb-1">
+      {label}
+    </span>
+    <span className="text-3xl font-extrabold">{value}</span>
   </div>
 );
 
@@ -463,20 +400,5 @@ const ApprovalRequestsTable = ({ data }) => (
     </div>
   </div>
 );
-
-const chartData = [
-  { name: "Jan", value: 45 },
-  { name: "Feb", value: 52 },
-  { name: "Mar", value: 48 },
-  { name: "Apr", value: 62 },
-  { name: "May", value: 55 },
-  { name: "Jun", value: 68 },
-  { name: "Jul", value: 58 },
-  { name: "Aug", value: 65 },
-  { name: "Sep", value: 71 },
-  { name: "Oct", value: 66 },
-  { name: "Nov", value: 73 },
-  { name: "Dec", value: 80 },
-];
 
 export default Dashboard;

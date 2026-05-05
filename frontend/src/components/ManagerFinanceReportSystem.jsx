@@ -37,6 +37,10 @@ const ManagerFinanceReportSystem = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const currentUser = JSON.parse(localStorage.getItem("user")) || {
+    fullName: "Người dùng",
+    role: "manager",
+  };
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const token = localStorage.getItem("token");
 
@@ -58,7 +62,11 @@ const ManagerFinanceReportSystem = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = res.data;
-      setReports(data.reports || []);
+      // Lọc để không hiển thị báo cáo do chính manager tạo
+      const filteredReports = (data.reports || []).filter(
+        (report) => report.creatorName !== currentUser.fullName,
+      );
+      setReports(filteredReports);
       setTotalPages(data.totalPages || 1);
       setPage(data.currentPage || page);
     } catch (error) {
@@ -68,7 +76,7 @@ const ManagerFinanceReportSystem = () => {
     } finally {
       setLoading(false);
     }
-  }, [API_URL, searchTerm, statusFilter, token, page]);
+  }, [API_URL, searchTerm, statusFilter, token, page, currentUser.fullName]);
 
   useEffect(() => {
     const timer = setTimeout(fetchReports, 300);
@@ -107,7 +115,7 @@ const ManagerFinanceReportSystem = () => {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white leading-tight">KTBM</h1>
-            <p className="text-[10px] text-blue-200 uppercase tracking-widest font-semibold">
+            <p className="text-[10px] text-white uppercase tracking-widest font-semibold">
               Quản lý
             </p>
           </div>
@@ -461,10 +469,10 @@ const NavItem = ({
     onClick={disabled ? undefined : onClick}
     className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${
       disabled
-        ? "cursor-not-allowed"
+        ? "cursor-not-allowed text-white"
         : active
           ? "bg-white/20 text-white font-bold shadow-inner"
-          : "text-blue-100 hover:bg-white/10 hover:text-white cursor-pointer"
+          : "text-white hover:bg-white/10 hover:text-white cursor-pointer"
     }`}
   >
     {icon} <span className="text-sm">{label}</span>

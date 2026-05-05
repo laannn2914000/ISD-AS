@@ -1,14 +1,31 @@
 import React, { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
-import { Printer, X, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Printer, X, FileText, Edit2 } from "lucide-react";
 
 const ReportDetailModal = ({ report, onClose }) => {
   const componentRef = useRef();
+  const navigate = useNavigate();
+  const currentUser = JSON.parse(localStorage.getItem("user")) || {};
 
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
     documentTitle: `Bao-cao-${report.reportId}`,
   });
+
+  const canEdit =
+    currentUser.fullName === report.creatorName &&
+    (report.status === "Draft" || report.status === "Rejected");
+
+  const handleEdit = () => {
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+    const editRoute =
+      user.role === "manager"
+        ? "/manager-edit-report"
+        : "/employee-edit-report";
+    navigate(`${editRoute}/${report._id}`);
+    onClose();
+  };
 
   if (!report) return null;
 
@@ -26,6 +43,14 @@ const ReportDetailModal = ({ report, onClose }) => {
             </h3>
           </div>
           <div className="flex items-center gap-2">
+            {canEdit && (
+              <button
+                onClick={handleEdit}
+                className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 font-bold text-sm transition-all shadow-lg shadow-yellow-100"
+              >
+                <Edit2 size={18} /> Chỉnh sửa
+              </button>
+            )}
             <button
               onClick={handlePrint}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold text-sm transition-all shadow-lg shadow-blue-100"

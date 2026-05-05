@@ -51,6 +51,7 @@ const CreateReport = () => {
     plan: "",
     kpi: 0,
     analysis: "",
+    signature: null, // File for digital signature
   });
 
   const templates = [
@@ -86,20 +87,46 @@ const CreateReport = () => {
       const token = localStorage.getItem("token");
       const user = JSON.parse(localStorage.getItem("user"));
 
-      // Payload đúng format với backend expect
-      const payload = {
-        name: formData.title,
-        type: template,
-        content: formData,
-        status: status,
-        dept: formData.dept,
-        creatorName: formData.reporter,
-      };
-
       const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-      await axios.post(`${API_URL}/api/reports/create`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+
+      if (formData.signature) {
+        // Use FormData for file upload
+        const formDataToSend = new FormData();
+        formDataToSend.append("name", formData.title);
+        formDataToSend.append("type", template);
+        formDataToSend.append(
+          "content",
+          JSON.stringify({
+            ...formData,
+            signature: undefined, // Remove file from content, will be handled separately
+          }),
+        );
+        formDataToSend.append("status", status);
+        formDataToSend.append("dept", formData.dept);
+        formDataToSend.append("creatorName", formData.reporter);
+        formDataToSend.append("signature", formData.signature);
+
+        await axios.post(`${API_URL}/api/reports/create`, formDataToSend, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      } else {
+        // Regular JSON payload
+        const payload = {
+          name: formData.title,
+          type: template,
+          content: formData,
+          status: status,
+          dept: formData.dept,
+          creatorName: formData.reporter,
+        };
+
+        await axios.post(`${API_URL}/api/reports/create`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
 
       alert(
         status === "Submitted"
@@ -182,13 +209,10 @@ const CreateReport = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">
-                  TỔNG THU (VNĐ)
-                </label>
                 <input
                   type="number"
                   className="w-full p-3 bg-gray-50 rounded-xl outline-none border border-gray-100 text-right font-semibold text-lg"
-                  placeholder="0"
+                  placeholder="Tổng thu (VNĐ)"
                   value={formData.income || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, income: e.target.value })
@@ -196,13 +220,10 @@ const CreateReport = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">
-                  TỔNG CHI (VNĐ)
-                </label>
                 <input
                   type="number"
                   className="w-full p-3 bg-gray-50 rounded-xl outline-none border border-gray-100 text-right font-semibold text-lg"
-                  placeholder="0"
+                  placeholder="Tổng chi (VNĐ)"
                   value={formData.expense || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, expense: e.target.value })
@@ -211,11 +232,9 @@ const CreateReport = () => {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-400 mb-1">
-                CHI TIẾT
-              </label>
               <textarea
                 rows="4"
+                placeholder="Chi tiết"
                 className="w-full p-3 bg-gray-50 rounded-xl outline-none border border-gray-100"
                 onChange={(e) =>
                   setFormData({ ...formData, detail: e.target.value })
@@ -272,6 +291,34 @@ const CreateReport = () => {
             ></textarea>
           </div>
         )}
+
+        {/* Digital Signature Upload */}
+        <div className="space-y-3 pb-4 border-t border-gray-100 pt-4">
+          <h4 className="text-[10px] font-bold text-blue-600 uppercase">
+            Chữ ký điện tử
+          </h4>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Tải lên chữ ký (PNG, JPG, JPEG)
+            </label>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/jpg"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  setFormData({ ...formData, signature: file });
+                }
+              }}
+              className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            {formData.signature && (
+              <p className="text-sm text-green-600">
+                Đã chọn: {formData.signature.name}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     );
   };
@@ -485,7 +532,13 @@ const CreateReport = () => {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 mt-20">
+                  <div
+                    className={
+                      user.role === "manager"
+                        ? "hidden"
+                        : "grid grid-cols-2 mt-20"
+                    }
+                  >
                     <div className="text-center font-bold">Ý KIẾN QUẢN LÝ</div>
                     <div className="text-center">
                       <p className="font-bold">NGƯỜI LÀM ĐƠN</p>

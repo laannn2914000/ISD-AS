@@ -141,7 +141,7 @@ const ReportSystem = () => {
           />
           <NavItem
             icon={<BarChart3 size={20} />}
-            label="Báo cáo tài chính"
+            label="Kiểm soát chứng từ"
             active={location.pathname === "/admin-finance-reports"}
             onClick={() => navigate("/admin-finance-reports")}
           />

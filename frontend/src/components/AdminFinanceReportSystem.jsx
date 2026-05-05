@@ -17,6 +17,7 @@ import {
   XCircle,
   Eye,
   FileSearch,
+  Trash2,
 } from "lucide-react";
 import ReportDetailModal from "./ReportDetailModal";
 
@@ -38,10 +39,6 @@ const AdminFinanceReportSystem = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const user = JSON.parse(localStorage.getItem("user")) || {
-    fullName: "Người dùng",
-    role: "admin",
-  };
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const token = localStorage.getItem("token");
 
@@ -56,7 +53,6 @@ const AdminFinanceReportSystem = () => {
         params: {
           ...(reportId ? { reportId } : { search: trimmed }),
           status: statusFilter === "All" ? "" : statusFilter,
-          type: "finance",
           page,
           limit: 10,
         },
@@ -66,7 +62,7 @@ const AdminFinanceReportSystem = () => {
       setReports(data.reports || []);
       setTotalPages(data.totalPages || 1);
       setPage(data.currentPage || page);
-    } catch (err) {
+    } catch {
       setReports([]);
       setTotalPages(1);
     } finally {
@@ -83,11 +79,17 @@ const AdminFinanceReportSystem = () => {
     const { type, id } = showConfirmModal;
 
     try {
-      await axios.patch(
-        `${API_URL}/api/reports/${id}/decide`,
-        { action: type, comment: rejectComment },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      if (type === "Delete") {
+        await axios.delete(`${API_URL}/api/reports/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        await axios.patch(
+          `${API_URL}/api/reports/${id}/decide`,
+          { action: type, comment: rejectComment },
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+      }
       setShowConfirmModal({ show: false, type: "", id: "" });
       setRejectComment("");
       fetchReports();
@@ -143,7 +145,7 @@ const AdminFinanceReportSystem = () => {
           />
           <NavItem
             icon={<BarChart3 size={20} />}
-            label="Báo cáo tài chính"
+            label="Kiểm soát chứng từ"
             active={location.pathname === "/admin-finance-reports"}
             onClick={() => navigate("/admin-finance-reports")}
           />
@@ -156,8 +158,8 @@ const AdminFinanceReportSystem = () => {
           <NavItem
             icon={<Users size={20} />}
             label="Quản lý nhân viên"
-            active={location.pathname === "/employee-management"}
-            onClick={() => navigate("/employee-management")}
+            active={location.pathname === "/report-system"}
+            onClick={() => navigate("/report-system")}
           />
           <NavItem
             icon={<Settings size={20} />}
@@ -185,7 +187,7 @@ const AdminFinanceReportSystem = () => {
             />
             <input
               type="text"
-              placeholder="Tìm kiếm báo cáo tài chính..."
+              placeholder="Tìm kiếm chứng từ..."
               className="w-full pl-14 pr-6 py-3.5 bg-gray-50 rounded-full outline-none focus:ring-1 focus:ring-yellow-500 text-sm"
               value={searchTerm}
               onChange={(e) => {
@@ -218,10 +220,10 @@ const AdminFinanceReportSystem = () => {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h2 className="text-2xl font-bold text-gray-800">
-                Báo cáo tài chính
+                Quản lý báo cáo
               </h2>
               <p className="text-gray-400 text-sm mt-1">
-                Quản lý và phê duyệt báo cáo tài chính từ nhân viên
+                Xem, duyệt hoặc từ chối báo cáo từ nhân viên và quản lý
               </p>
             </div>
             <div className="flex bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
@@ -313,7 +315,8 @@ const AdminFinanceReportSystem = () => {
                         >
                           <Eye size={18} />
                         </button>
-                        {report.status === "Submitted" && (
+                        {(report.status === "Submitted" ||
+                          report.status === "submitted") && (
                           <>
                             <button
                               onClick={() =>
@@ -341,6 +344,21 @@ const AdminFinanceReportSystem = () => {
                             </button>
                           </>
                         )}
+                        {(report.status === "Rejected" ||
+                          report.status === "rejected") && (
+                          <button
+                            onClick={() =>
+                              setShowConfirmModal({
+                                show: true,
+                                type: "Delete",
+                                id: report._id,
+                              })
+                            }
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -351,7 +369,7 @@ const AdminFinanceReportSystem = () => {
             <div className="text-center py-20 bg-white rounded-[32px] border border-gray-100 shadow-sm">
               <FileSearch size={64} className="mx-auto text-gray-200 mb-4" />
               <p className="text-gray-400 font-medium">
-                Hiện không có báo cáo tài chính nào cần xử lý
+                Hiện không có chứng từ nào cần xử lý
               </p>
             </div>
           )}
@@ -392,11 +410,14 @@ const AdminFinanceReportSystem = () => {
             <h3 className="text-xl font-bold text-gray-800 mb-2">
               {showConfirmModal.type === "Approve"
                 ? "Xác nhận duyệt báo cáo"
-                : "Từ chối báo cáo"}
+                : showConfirmModal.type === "Reject"
+                  ? "Từ chối báo cáo"
+                  : "Xóa báo cáo"}
             </h3>
             <p className="text-sm text-gray-500 mb-6">
-              Hành động này sẽ cập nhật trạng thái báo cáo chính thức trên hệ
-              thống.
+              {showConfirmModal.type === "Delete"
+                ? "Hành động này sẽ xóa vĩnh viễn báo cáo khỏi hệ thống. Bạn có chắc chắn?"
+                : "Hành động này sẽ cập nhật trạng thái báo cáo chính thức trên hệ thống."}
             </p>
 
             {showConfirmModal.type === "Reject" && (
@@ -424,10 +445,16 @@ const AdminFinanceReportSystem = () => {
                 className={`flex-1 py-3 text-white rounded-xl font-bold shadow-lg transition-all ${
                   showConfirmModal.type === "Approve"
                     ? "bg-green-600 shadow-green-100 hover:bg-green-700"
-                    : "bg-red-600 shadow-red-100 hover:bg-red-700"
+                    : showConfirmModal.type === "Delete"
+                      ? "bg-red-600 shadow-red-100 hover:bg-red-700"
+                      : "bg-red-600 shadow-red-100 hover:bg-red-700"
                 }`}
               >
-                {showConfirmModal.type === "Approve" ? "Duyệt" : "Từ chối"}
+                {showConfirmModal.type === "Approve"
+                  ? "Duyệt"
+                  : showConfirmModal.type === "Delete"
+                    ? "Xóa"
+                    : "Từ chối"}
               </button>
             </div>
           </div>

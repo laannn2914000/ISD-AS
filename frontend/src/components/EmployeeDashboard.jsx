@@ -44,12 +44,16 @@ const EmployeeDashboard = () => {
     email: "",
   };
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchEmployeeData = async () => {
       try {
         const res = await axios.get(
-          `${API_URL}/api/employee-stats/${user.email}`,
+          `${API_URL}/api/employee-stats/${encodeURIComponent(user.email)}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
         );
         setData(res.data);
       } catch (err) {
@@ -59,7 +63,7 @@ const EmployeeDashboard = () => {
       }
     };
     fetchEmployeeData();
-  }, [user.email, API_URL]);
+  }, [user.email, API_URL, token]);
 
   // Hàm xử lý đăng xuất thực tế
   const confirmLogout = () => {
@@ -154,10 +158,10 @@ const EmployeeDashboard = () => {
             <div className="flex items-center gap-4 pl-6 border-l border-gray-100 h-10 text-left">
               <div className="text-right">
                 <p className="text-base font-bold text-gray-800 leading-tight">
-                  Người dùng
+                  {user.fullName}
                 </p>
                 <p className="text-xs text-gray-400 font-semibold tracking-tight uppercase">
-                  {user.role}
+                  {user.role || "Nhân viên"}
                 </p>
               </div>
               <div className="w-12 h-12 bg-[#0061f2] rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md border-2 border-white">
@@ -306,8 +310,8 @@ const EmployeeDashboard = () => {
                 Báo cáo gần đây
               </h3>
               <div className="space-y-5">
-                {data?.recentReports.length > 0 ? (
-                  data.recentReports.map((report, i) => (
+                {data?.recentReports?.length > 0 ? (
+                  data?.recentReports.map((report, i) => (
                     <div
                       key={i}
                       className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors"
@@ -451,16 +455,5 @@ const getStatusColor = (s) => {
   if (s === "Từ chối") return "bg-red-50 text-red-600";
   return "bg-orange-50 text-orange-600";
 };
-
-// Dữ liệu giả định hiệu suất tuần
-const personalPerformanceData = [
-  { day: "T2", reports: 2 },
-  { day: "T3", reports: 5 },
-  { day: "T4", reports: 3 },
-  { day: "T5", reports: 8 },
-  { day: "T6", reports: 6 },
-  { day: "T7", reports: 1 },
-  { day: "CN", reports: 0 },
-];
 
 export default EmployeeDashboard;
