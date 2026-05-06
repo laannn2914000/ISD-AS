@@ -59,6 +59,9 @@ const ManagerReportSystem = () => {
     kpi: 0,
     analysis: "",
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingReportId, setEditingReportId] = useState(null);
+  const [errors, setErrors] = useState({});
   const reportRef = useRef();
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -127,34 +130,103 @@ const ManagerReportSystem = () => {
     }
   };
 
-  const confirmLogout = () => {
-    localStorage.clear();
-    window.location.href = "/";
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = "Tiêu đề không được để trống";
+    } else if (
+      formData.title.trim().length < 5 ||
+      formData.title.trim().length > 100
+    ) {
+      newErrors.title = "Tiêu đề phải từ 5–100 ký tự";
+    }
+
+    let contentText = "";
+    if (template === "finance") {
+      contentText = formData.detail || "";
+    } else if (template === "daily") {
+      contentText = [formData.done, formData.issues, formData.plan]
+        .filter(Boolean)
+        .join(" ");
+    } else if (template === "business") {
+      contentText = formData.analysis || "";
+    }
+
+    if (!contentText.trim()) {
+      newErrors.content = "Nội dung không được để trống";
+    } else if (contentText.trim().length < 10) {
+      newErrors.content = "Nội dung phải có ít nhất 10 ký tự";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const loadReportForEdit = (report) => {
+    setIsEditing(true);
+    setEditingReportId(report._id);
+    setTemplate(report.type || "finance");
+    setFormData({
+      companyName:
+        report.content?.companyName || "CÔNG TY CỔ PHẦN KẾ TOÁN BÁCH MỸ",
+      reportNumber: report.content?.reportNumber || "......./BC-AX",
+      location: report.content?.location || "Hà Nội",
+      recipient:
+        report.content?.recipient ||
+        "Ban Giám đốc Công ty Cổ phần Kế toán Bách Mỹ",
+      reporter: report.content?.reporter || user.fullName,
+      dept: report.content?.dept || user.dept || "Phòng Kế toán",
+      title: report.name || "",
+      income: report.content?.income || 0,
+      expense: report.content?.expense || 0,
+      detail: report.content?.detail || "",
+      done: report.content?.done || "",
+      issues: report.content?.issues || "",
+      plan: report.content?.plan || "",
+      kpi: report.content?.kpi || 0,
+      analysis: report.content?.analysis || "",
+    });
+    setErrors({});
+    setStep(2);
+    setShowCreateModal(true);
+  };
+
+  const resetModal = () => {
+    setShowCreateModal(false);
+    setStep(1);
+    setTemplate(null);
+    setIsEditing(false);
+    setEditingReportId(null);
+    setErrors({});
   };
 
   const handleSubmitReport = async (status = "Submitted") => {
-    if (!formData.title.trim()) {
-      alert("Vui lòng nhập tiêu đề báo cáo.");
+    if (!validateForm()) {
       return;
     }
+
     try {
-      await axios.post(
-        `${API_URL}/api/reports/create`,
-        {
-          name: formData.title,
-          type: template || "finance",
-          content: formData,
-          status,
-          dept: formData.dept,
-          creatorName: formData.reporter,
-        },
-        {
+      const payload = {
+        name: formData.title,
+        type: template || "finance",
+        content: formData,
+        status,
+        dept: formData.dept,
+        creatorName: formData.reporter,
+      };
+
+      if (isEditing && editingReportId) {
+        await axios.put(`${API_URL}/api/reports/${editingReportId}`, payload, {
           headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      setShowCreateModal(false);
-      setStep(1);
-      setTemplate(null);
+        });
+      } else {
+        await axios.post(`${API_URL}/api/reports/create`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
+      resetModal();
       setFormData({
         ...formData,
         title: "",
@@ -170,7 +242,7 @@ const ManagerReportSystem = () => {
       fetchReports();
     } catch (err) {
       alert(
-        "Lỗi khi tạo báo cáo: " +
+        (isEditing ? "Lỗi khi cập nhật báo cáo: " : "Lỗi khi tạo báo cáo: ") +
           (err.response?.data?.message || "Lỗi kết nối"),
       );
     }
@@ -270,6 +342,9 @@ const ManagerReportSystem = () => {
             <div className="flex gap-4 items-center">
               <button
                 onClick={() => {
+                  setIsEditing(false);
+                  setEditingReportId(null);
+                  setErrors({});
                   setShowCreateModal(true);
                   setStep(1);
                   setTemplate(null);
@@ -401,11 +476,7 @@ const ManagerReportSystem = () => {
                                   report.status === "Rejected" ||
                                   report.status === "rejected") && (
                                   <button
-                                    onClick={() =>
-                                      navigate(
-                                        `/manager-edit-report/${report._id}`,
-                                      )
-                                    }
+                                    onClick={() => loadReportForEdit(report)}
                                     className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"
                                   >
                                     <Edit size={18} />
@@ -590,15 +661,11 @@ const ManagerReportSystem = () => {
             <div className="flex items-start justify-between gap-4 mb-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-800">
-                  Tạo báo cáo mới
+                  {isEditing ? "Chỉnh sửa báo cáo" : "Tạo báo cáo mới"}
                 </h3>
               </div>
               <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setStep(1);
-                  setTemplate(null);
-                }}
+                onClick={resetModal}
                 className="text-gray-400 hover:text-gray-700 transition-colors"
               >
                 Đóng
@@ -737,12 +804,20 @@ const ManagerReportSystem = () => {
                       <input
                         type="text"
                         placeholder="Tiêu đề báo cáo"
-                        className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 outline-none focus:border-blue-400"
+                        className={`w-full p-3 bg-gray-50 rounded-xl border outline-none focus:border-blue-400 ${
+                          errors.title ? "border-red-400" : "border-gray-100"
+                        }`}
                         value={formData.title}
-                        onChange={(e) =>
-                          setFormData({ ...formData, title: e.target.value })
-                        }
+                        onChange={(e) => {
+                          setFormData({ ...formData, title: e.target.value });
+                          if (errors.title) setErrors({ ...errors, title: "" });
+                        }}
                       />
+                      {errors.title && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.title}
+                        </p>
+                      )}
                       {template === "finance" && (
                         <div className="grid grid-cols-2 gap-4">
                           <input
@@ -840,6 +915,11 @@ const ManagerReportSystem = () => {
                             }
                           />
                         </>
+                      )}
+                      {errors.content && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.content}
+                        </p>
                       )}
                     </div>
                     <div className="flex flex-col sm:flex-row items-center gap-3 pt-4">

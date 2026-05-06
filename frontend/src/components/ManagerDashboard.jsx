@@ -138,17 +138,6 @@ const ManagerDashboard = () => {
             active={location.pathname === "/manager-reports"}
             onClick={() => navigate("/manager-reports")}
           />
-          <NavItem
-            icon={<BarChart3 size={20} />}
-            label="Báo cáo tài chính"
-            active={location.pathname === "/manager-finance-reports"}
-            onClick={() => navigate("/manager-finance-reports")}
-          />
-          <NavItem
-            icon={<FileSearch size={20} />}
-            label="Kiểm soát chứng từ"
-            disabled
-          />
           <NavItem icon={<Settings size={20} />} label="Cài đặt" disabled />
         </nav>
 

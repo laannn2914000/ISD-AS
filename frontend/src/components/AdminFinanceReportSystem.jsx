@@ -145,21 +145,16 @@ const AdminFinanceReportSystem = () => {
           />
           <NavItem
             icon={<BarChart3 size={20} />}
-            label="Kiểm soát chứng từ"
+            label="Quản lý báo cáo"
             active={location.pathname === "/admin-finance-reports"}
             onClick={() => navigate("/admin-finance-reports")}
           />
-          <NavItem
-            icon={<UserCheck size={20} />}
-            label="Quản lý báo cáo"
-            active={location.pathname === "/report-system"}
-            onClick={() => navigate("/report-system")}
-          />
+
           <NavItem
             icon={<Users size={20} />}
             label="Quản lý nhân viên"
-            active={location.pathname === "/report-system"}
-            onClick={() => navigate("/report-system")}
+            active={location.pathname === "/employee-management"}
+            onClick={() => navigate("/employee-management")}
           />
           <NavItem
             icon={<Settings size={20} />}
@@ -187,7 +182,7 @@ const AdminFinanceReportSystem = () => {
             />
             <input
               type="text"
-              placeholder="Tìm kiếm chứng từ..."
+              placeholder="Tìm kiếm báo cáo..."
               className="w-full pl-14 pr-6 py-3.5 bg-gray-50 rounded-full outline-none focus:ring-1 focus:ring-yellow-500 text-sm"
               value={searchTerm}
               onChange={(e) => {
@@ -227,28 +222,32 @@ const AdminFinanceReportSystem = () => {
               </p>
             </div>
             <div className="flex bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
-              {["All", "Submitted", "Approved", "Rejected"].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => {
-                    setStatusFilter(s);
-                    setPage(1);
-                  }}
-                  className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${
-                    statusFilter === s
-                      ? "bg-gray-900 text-white shadow-md"
-                      : "text-gray-500 hover:bg-gray-50"
-                  }`}
-                >
-                  {s === "All"
-                    ? "Tất cả"
-                    : s === "Submitted"
-                      ? "Chờ duyệt"
-                      : s === "Approved"
-                        ? "Đã duyệt"
-                        : "Từ chối"}
-                </button>
-              ))}
+              {["All", "Draft", "Submitted", "Approved", "Rejected"].map(
+                (s) => (
+                  <button
+                    key={s}
+                    onClick={() => {
+                      setStatusFilter(s);
+                      setPage(1);
+                    }}
+                    className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${
+                      statusFilter === s
+                        ? "bg-gray-900 text-white shadow-md"
+                        : "text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    {s === "All"
+                      ? "Tất cả"
+                      : s === "Draft"
+                        ? "Nháp"
+                        : s === "Submitted"
+                          ? "Chờ duyệt"
+                          : s === "Approved"
+                            ? "Đã duyệt"
+                            : "Từ chối"}
+                  </button>
+                ),
+              )}
             </div>
           </div>
 

@@ -29,9 +29,17 @@ const EditReport = () => {
   const [template, setTemplate] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  // Validation errors
+  const [errors, setErrors] = useState({});
+
+  // Lấy user từ localStorage
+  const user = JSON.parse(localStorage.getItem("user")) || {
+    fullName: "Người dùng",
+    dept: "Phòng ban",
+  };
+
   // Helper function to get correct reports route based on user role
   const getReportsRoute = () => {
-    const user = JSON.parse(localStorage.getItem("user")) || {};
     return user.role === "manager" ? "/manager-reports" : "/employee-reports";
   };
 
@@ -123,8 +131,47 @@ const EditReport = () => {
     fetchReport();
   }, [id]);
 
+  // Validation function
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = "Tiêu đề không được để trống";
+    } else if (
+      formData.title.trim().length < 5 ||
+      formData.title.trim().length > 100
+    ) {
+      newErrors.title = "Tiêu đề phải từ 5–100 ký tự";
+    }
+
+    // Check content based on template
+    let contentText = "";
+    if (template === "finance") {
+      contentText = formData.detail || "";
+    } else if (template === "daily") {
+      contentText = [formData.done, formData.issues, formData.plan]
+        .filter(Boolean)
+        .join(" ");
+    } else if (template === "business") {
+      contentText = formData.analysis || "";
+    }
+
+    if (!contentText.trim()) {
+      newErrors.content = "Nội dung không được để trống";
+    } else if (contentText.trim().length < 10) {
+      newErrors.content = "Nội dung phải có ít nhất 10 ký tự";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   // CẬP NHẬT: Hàm gửi dữ liệu lên Backend
   const handleSubmitReport = async (status = "Submitted") => {
+    if (!validateForm()) {
+      return;
+    }
+
     setSaving(true);
     try {
       const token = localStorage.getItem("token");
@@ -149,9 +196,9 @@ const EditReport = () => {
       );
       navigate(getReportsRoute());
     } catch (err) {
-      alert(
-        "Lỗi: " + (err.response?.data?.message || "Không thể kết nối Server"),
-      );
+      const errorMessage =
+        err.response?.data?.message || "Đã xảy ra lỗi khi tạo báo cáo";
+      alert(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -215,6 +262,23 @@ const EditReport = () => {
               setFormData({ ...formData, recipient: e.target.value })
             }
           />
+          <div>
+            <input
+              type="text"
+              placeholder="Tiêu đề báo cáo"
+              className={`w-full p-2 bg-gray-50 rounded-lg border text-sm outline-none focus:border-blue-400 ${
+                errors.title ? "border-red-400" : "border-gray-100"
+              }`}
+              value={formData.title}
+              onChange={(e) => {
+                setFormData({ ...formData, title: e.target.value });
+                if (errors.title) setErrors({ ...errors, title: "" });
+              }}
+            />
+            {errors.title && (
+              <p className="text-red-500 text-xs mt-1">{errors.title}</p>
+            )}
+          </div>
         </div>
 
         {/* PHẦN NỘI DUNG BIẾN THIÊN */}
@@ -258,12 +322,18 @@ const EditReport = () => {
               </label>
               <textarea
                 rows="4"
-                className="w-full p-3 bg-gray-50 rounded-xl outline-none border border-gray-100"
+                className={`w-full p-3 bg-gray-50 rounded-xl outline-none border text-sm ${
+                  errors.content ? "border-red-400" : "border-gray-100"
+                }`}
                 value={formData.detail}
-                onChange={(e) =>
-                  setFormData({ ...formData, detail: e.target.value })
-                }
+                onChange={(e) => {
+                  setFormData({ ...formData, detail: e.target.value });
+                  if (errors.content) setErrors({ ...errors, content: "" });
+                }}
               ></textarea>
+              {errors.content && (
+                <p className="text-red-500 text-xs mt-1">{errors.content}</p>
+              )}
             </div>
           </div>
         )}
@@ -272,30 +342,42 @@ const EditReport = () => {
             <textarea
               placeholder="Việc đã xong..."
               rows="3"
-              className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100"
+              className={`w-full p-3 bg-gray-50 rounded-xl border text-sm outline-none ${
+                errors.content ? "border-red-400" : "border-gray-100"
+              }`}
               value={formData.done}
-              onChange={(e) =>
-                setFormData({ ...formData, done: e.target.value })
-              }
-            ></textarea>
+              onChange={(e) => {
+                setFormData({ ...formData, done: e.target.value });
+                if (errors.content) setErrors({ ...errors, content: "" });
+              }}
+            />
             <textarea
               placeholder="Khó khăn..."
               rows="2"
-              className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100"
+              className={`w-full p-3 bg-gray-50 rounded-xl border text-sm outline-none ${
+                errors.content ? "border-red-400" : "border-gray-100"
+              }`}
               value={formData.issues}
-              onChange={(e) =>
-                setFormData({ ...formData, issues: e.target.value })
-              }
-            ></textarea>
+              onChange={(e) => {
+                setFormData({ ...formData, issues: e.target.value });
+                if (errors.content) setErrors({ ...errors, content: "" });
+              }}
+            />
             <textarea
               placeholder="Kế hoạch mai..."
               rows="2"
-              className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100"
+              className={`w-full p-3 bg-gray-50 rounded-xl border text-sm outline-none ${
+                errors.content ? "border-red-400" : "border-gray-100"
+              }`}
               value={formData.plan}
-              onChange={(e) =>
-                setFormData({ ...formData, plan: e.target.value })
-              }
-            ></textarea>
+              onChange={(e) => {
+                setFormData({ ...formData, plan: e.target.value });
+                if (errors.content) setErrors({ ...errors, content: "" });
+              }}
+            />
+            {errors.content && (
+              <p className="text-red-500 text-xs mt-1">{errors.content}</p>
+            )}
           </div>
         )}
         {template === "business" && (
@@ -312,12 +394,18 @@ const EditReport = () => {
             <textarea
               placeholder="Phân tích dự án..."
               rows="6"
-              className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100"
+              className={`w-full p-3 bg-gray-50 rounded-xl border text-sm outline-none ${
+                errors.content ? "border-red-400" : "border-gray-100"
+              }`}
               value={formData.analysis}
-              onChange={(e) =>
-                setFormData({ ...formData, analysis: e.target.value })
-              }
-            ></textarea>
+              onChange={(e) => {
+                setFormData({ ...formData, analysis: e.target.value });
+                if (errors.content) setErrors({ ...errors, content: "" });
+              }}
+            />
+            {errors.content && (
+              <p className="text-red-500 text-xs mt-1">{errors.content}</p>
+            )}
           </div>
         )}
       </div>

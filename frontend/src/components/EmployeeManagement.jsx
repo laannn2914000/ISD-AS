@@ -263,14 +263,10 @@ const EmployeeManagement = () => {
           />
           <NavItem
             icon={<BarChart3 size={20} />}
-            label="Báo cáo tài chính"
+            label="Quản lý báo cáo"
             onClick={() => navigate("/admin-finance-reports")}
           />
-          <NavItem
-            icon={<UserCheck size={20} />}
-            label="Quản lý báo cáo"
-            onClick={() => navigate("/report-system")}
-          />
+        
           <NavItem
             icon={<Users size={20} />}
             label="Quản lý nhân viên"

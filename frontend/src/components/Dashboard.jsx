@@ -121,16 +121,11 @@ const Dashboard = () => {
           />
           <NavItem
             icon={<BarChart3 size={20} />}
-            label="Kiểm soát chứng từ"
+            label="Quản lý báo cáo"
             active={location.pathname === "/admin-finance-reports"}
             onClick={() => navigate("/admin-finance-reports")}
           />
-          <NavItem
-            icon={<UserCheck size={20} />}
-            label="Quản lý báo cáo"
-            active={location.pathname === "/report-system"}
-            onClick={() => navigate("/report-system")}
-          />
+          
           <NavItem
             icon={<Users size={20} />}
             label="Quản lý nhân viên"

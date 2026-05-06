@@ -117,6 +117,16 @@ router.patch("/:id/decide", async (req, res) => {
     if (!report)
       return res.status(404).json({ message: "Báo cáo không tồn tại" });
 
+    // Manager không thể duyệt báo cáo của chính mình
+    if (
+      req.user.role === "manager" &&
+      report.creatorId.toString() === req.user.id
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Bạn không thể duyệt báo cáo của chính mình" });
+    }
+
     // Cập nhật trạng thái
     report.status = action === "Approve" ? "Approved" : "Rejected";
     if (comment) report.comment = comment;
@@ -143,7 +153,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// 4c. CẬP NHẬT BÁO CÁO (Chỉ Employee sửa được báo cáo Draft của mình)
+// 4c. CẬP NHẬT BÁO CÁO (Chỉ chủ sở hữu sửa được báo cáo Draft hoặc Rejected của mình)
 router.put("/:id", async (req, res) => {
   try {
     const report = await Report.findById(req.params.id);
@@ -154,9 +164,11 @@ router.put("/:id", async (req, res) => {
       return res.status(403).json({ message: "Không có quyền sửa" });
     }
 
-    // Chỉ sửa được khi là Draft
-    if (report.status !== "Draft") {
-      return res.status(400).json({ message: "Chỉ sửa được báo cáo nháp" });
+    // Chỉ sửa được khi là Draft hoặc Rejected
+    if (!["Draft", "Rejected"].includes(report.status)) {
+      return res
+        .status(400)
+        .json({ message: "Chỉ sửa được báo cáo nháp hoặc bị từ chối" });
     }
 
     const { name, type, content, status, dept, creatorName } = req.body;
