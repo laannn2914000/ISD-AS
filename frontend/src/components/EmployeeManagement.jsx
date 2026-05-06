@@ -268,7 +268,7 @@ const EmployeeManagement = () => {
           />
           <NavItem
             icon={<UserCheck size={20} />}
-            label="Phê duyệt báo cáo"
+            label="Quản lý báo cáo"
             onClick={() => navigate("/report-system")}
           />
           <NavItem
@@ -351,7 +351,6 @@ const EmployeeManagement = () => {
                   <th className="px-6 py-5">Email</th>
                   <th className="px-6 py-5">Số điện thoại</th>
                   <th className="px-6 py-5">Phòng ban</th>
-                  <th className="px-6 py-5">Vai trò</th>
                   <th className="px-6 py-5 text-center">Hành động</th>
                 </tr>
               </thead>
@@ -374,9 +373,6 @@ const EmployeeManagement = () => {
                       {showRealInfo[emp._id] ? emp.phone || "---" : "********"}
                     </td>
                     <td className="px-6 py-5 text-gray-500">{emp.dept}</td>
-                    <td className="px-6 py-5 text-gray-500 capitalize">
-                      {emp.role || "manager"}
-                    </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center justify-center gap-2">
                         <button
@@ -667,42 +663,25 @@ const EmployeeModal = ({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-bold text-gray-400 uppercase ml-1">
-              Phòng ban
-            </label>
-            <select
-              className={`w-full mt-1 px-5 py-3 bg-gray-50 border ${errors.dept ? "border-red-500" : "border-gray-100"} rounded-2xl outline-none focus:ring-2 focus:ring-yellow-400`}
-              value={data.dept || ""}
-              onChange={(e) => setData({ ...data, dept: e.target.value })}
-            >
-              <option value="">Chọn...</option>
-              <option value="Kế toán">Kế toán</option>
-              <option value="Nhân sự">Nhân sự</option>
-              <option value="Kinh doanh">Kinh doanh</option>
-            </select>
-            {errors.dept && (
-              <p className="text-red-500 text-[11px] mt-1 ml-2 font-medium">
-                {errors.dept}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-400 uppercase ml-1">
-              Vai trò
-            </label>
-            <select
-              className={`w-full mt-1 px-5 py-3 rounded-2xl outline-none border border-gray-100 ${!isEdit ? "bg-gray-100 cursor-not-allowed text-gray-500" : "bg-gray-50"}`}
-              value={data.role || "manager"}
-              disabled={!isEdit}
-              onChange={(e) => setData({ ...data, role: e.target.value })}
-            >
-              <option value="manager">Manager</option>
-              {isEdit && <option value="nhân viên">Nhân viên</option>}
-              {isEdit && <option value="admin">Admin</option>}
-            </select>
-          </div>
+        <div>
+          <label className="text-xs font-bold text-gray-400 uppercase ml-1">
+            Phòng ban
+          </label>
+          <select
+            className={`w-full mt-1 px-5 py-3 bg-gray-50 border ${errors.dept ? "border-red-500" : "border-gray-100"} rounded-2xl outline-none focus:ring-2 focus:ring-yellow-400`}
+            value={data.dept || ""}
+            onChange={(e) => setData({ ...data, dept: e.target.value })}
+          >
+            <option value="">Chọn...</option>
+            <option value="Kế toán">Kế toán</option>
+            <option value="Nhân sự">Nhân sự</option>
+            <option value="Kinh doanh">Kinh doanh</option>
+          </select>
+          {errors.dept && (
+            <p className="text-red-500 text-[11px] mt-1 ml-2 font-medium">
+              {errors.dept}
+            </p>
+          )}
         </div>
       </div>
 

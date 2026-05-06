@@ -134,7 +134,7 @@ const ManagerDashboard = () => {
           />
           <NavItem
             icon={<FileCheck size={20} />}
-            label="Phê duyệt báo cáo"
+            label="Quản lý báo cáo"
             active={location.pathname === "/manager-reports"}
             onClick={() => navigate("/manager-reports")}
           />
@@ -200,7 +200,7 @@ const ManagerDashboard = () => {
               Dashboard
             </h2>
             <p className="text-gray-400 text-sm mt-1.5 font-normal">
-              Tổng hợp và phê duyệt báo cáo hệ thống
+              Tổng hợp và Quản lý báo cáo hệ thống
             </p>
           </section>
 

@@ -106,7 +106,7 @@ const EmployeeDashboard = () => {
           {/* Chuyển hướng đến danh sách báo cáo */}
           <NavItem
             icon={<FileText size={20} />}
-            label="Báo cáo của tôi"
+            label="Quản lý báo cáo"
             active={location.pathname === "/employee-reports"}
             onClick={() => navigate("/employee-reports")}
           />

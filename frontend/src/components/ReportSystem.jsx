@@ -147,7 +147,7 @@ const ReportSystem = () => {
           />
           <NavItem
             icon={<UserCheck size={20} />}
-            label="Phê duyệt báo cáo"
+            label="Quản lý báo cáo"
             active={location.pathname === "/report-system"}
             onClick={() => navigate("/report-system")}
           />
@@ -211,11 +211,11 @@ const ReportSystem = () => {
           </div>
         </header>
 
-        {/* NỘI DUNG CHÍNH (PHÊ DUYỆT BÁO CÁO) */}
+        {/* NỘI DUNG CHÍNH (Quản lý báo cáo) */}
         <main className="p-10 space-y-8 text-left">
           <section>
             <h2 className="text-3xl font-extrabold text-[#0f172a] tracking-tight">
-              Phê duyệt báo cáo
+              Quản lý báo cáo
             </h2>
             <p className="text-gray-400 text-sm mt-1.5 font-normal">
               Quản lý và kiểm duyệt các báo cáo từ nhân viên
@@ -225,26 +225,29 @@ const ReportSystem = () => {
           {/* BẢNG DỮ LIỆU BÁO CÁO */}
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
             {/* Filter Bar bên trong Main */}
-            <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
-              <select
-                className="bg-white border border-gray-100 p-2.5 rounded-xl text-sm font-bold outline-none shadow-sm"
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="All">Tất cả trạng thái</option>
-                <option value="Submitted">Chờ duyệt</option>
-                <option value="Approved">Đã duyệt</option>
-                <option value="Rejected">Từ chối</option>
-              </select>
-              <button
-                onClick={fetchReports}
-                className="bg-gray-900 text-yellow-400 px-6 py-2.5 rounded-xl font-bold text-sm"
-              >
-                Lọc dữ liệu
-              </button>
+            <div className="p-6 border-b border-gray-50 flex justify-start gap-3 bg-gray-50/30">
+              {["All", "Submitted", "Approved", "Rejected"].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    setStatusFilter(s);
+                    setPage(1);
+                  }}
+                  className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${
+                    statusFilter === s
+                      ? "bg-gray-900 text-white shadow-md"
+                      : "bg-white border border-gray-100 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {s === "All"
+                    ? "Tất cả"
+                    : s === "Submitted"
+                      ? "Chờ duyệt"
+                      : s === "Approved"
+                        ? "Đã duyệt"
+                        : "Từ chối"}
+                </button>
+              ))}
             </div>
 
             <table className="w-full text-left">
@@ -352,23 +355,62 @@ const ReportSystem = () => {
                 Trang {page} trên {totalPages} - {reports.length} báo cáo hiển
                 thị
               </p>
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Trước
-                </button>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() =>
-                    setPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Sau
-                </button>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
+                  >
+                    ←
+                  </button>
+                  {/* Hiển thị các nút số trang */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => {
+                      if (totalPages <= 5) return true;
+                      if (p === 1 || p === totalPages) return true;
+                      if (Math.abs(p - page) <= 1) return true;
+                      return false;
+                    })
+                    .map((p, idx, arr) => (
+                      <div key={p}>
+                        {idx > 0 && arr[idx - 1] !== p - 1 && (
+                          <span className="px-1 text-gray-400">...</span>
+                        )}
+                        <button
+                          onClick={() => setPage(p)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                            page === p
+                              ? "bg-gray-900 text-white"
+                              : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </div>
+                    ))}
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() =>
+                      setPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
+                  >
+                    →
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max={totalPages}
+                  value={page}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (val >= 1 && val <= totalPages) setPage(val);
+                  }}
+                  className="w-12 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center focus:ring-1 focus:ring-gray-900 outline-none"
+                  placeholder="Trang"
+                />
               </div>
             </div>
           )}

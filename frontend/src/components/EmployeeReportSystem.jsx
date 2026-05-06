@@ -13,7 +13,8 @@ import {
   Bell,
   Loader2,
   Eye,
-  RefreshCcw,
+  Edit,
+  Trash2,
   XCircle,
 } from "lucide-react";
 
@@ -49,7 +50,7 @@ const EmployeeReportSystem = () => {
       setTotalPages(1);
       setPage(1);
     } catch (error) {
-      console.error("Lỗi lấy báo cáo của tôi:", error);
+      console.error("Lỗi lấy Quản lý báo cáo:", error);
       setReports([]);
       setTotalPages(1);
       setPage(1);
@@ -105,7 +106,7 @@ const EmployeeReportSystem = () => {
           />
           <NavItem
             icon={<FileText size={20} />}
-            label="Báo cáo của tôi"
+            label="Quản lý báo cáo"
             active={location.pathname === "/employee-reports"}
             onClick={() => navigate("/employee-reports")}
           />
@@ -172,11 +173,8 @@ const EmployeeReportSystem = () => {
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-3xl font-extrabold text-[#0f172a] tracking-tight">
-                Báo cáo của tôi
+                Quản lý báo cáo
               </h2>
-              <p className="text-gray-400 text-sm mt-1.5">
-                Trạng thái phê duyệt các chứng từ và báo cáo của bạn
-              </p>
             </div>
             <div className="flex bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
               {["All", "Draft", "Submitted", "Approved", "Rejected"].map(
@@ -216,7 +214,7 @@ const EmployeeReportSystem = () => {
                   <th className="p-6">Tiêu đề báo cáo</th>
                   <th className="p-6">Ngày gửi</th>
                   <th className="p-6">Trạng thái</th>
-                  <th className="p-6 text-center">Xem</th>
+                  <th className="p-6 text-center">Hành động</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -274,9 +272,10 @@ const EmployeeReportSystem = () => {
                             <Eye size={18} />
                           </button>
                           <div className="flex items-center gap-2">
-                            {report.status === "Draft" && (
+                            {(report.status === "Draft" ||
+                              report.status === "Rejected") && (
                               <button
-                                className="p-2 text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-all"
+                                className="p-2 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                                 onClick={() =>
                                   navigate(
                                     `/employee-edit-report/${report._id}`,
@@ -284,7 +283,7 @@ const EmployeeReportSystem = () => {
                                 }
                                 title="Chỉnh sửa báo cáo"
                               >
-                                <RefreshCcw size={18} />
+                                <Edit size={18} />
                               </button>
                             )}
                             {report.status !== "Approved" && (
@@ -342,23 +341,62 @@ const EmployeeReportSystem = () => {
                 Trang {page} trên {totalPages} - {visibleReports.length} báo cáo
                 hiển thị
               </p>
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Trước
-                </button>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() =>
-                    setPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Sau
-                </button>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
+                  >
+                    ←
+                  </button>
+                  {/* Hiển thị các nút số trang */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => {
+                      if (totalPages <= 5) return true;
+                      if (p === 1 || p === totalPages) return true;
+                      if (Math.abs(p - page) <= 1) return true;
+                      return false;
+                    })
+                    .map((p, idx, arr) => (
+                      <div key={p}>
+                        {idx > 0 && arr[idx - 1] !== p - 1 && (
+                          <span className="px-1 text-gray-400">...</span>
+                        )}
+                        <button
+                          onClick={() => setPage(p)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                            page === p
+                              ? "bg-blue-500 text-white"
+                              : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </div>
+                    ))}
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() =>
+                      setPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
+                  >
+                    →
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max={totalPages}
+                  value={page}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (val >= 1 && val <= totalPages) setPage(val);
+                  }}
+                  className="w-12 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center focus:ring-1 focus:ring-blue-500 outline-none"
+                  placeholder="Trang"
+                />
               </div>
             </div>
           )}

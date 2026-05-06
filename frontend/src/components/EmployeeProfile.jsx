@@ -128,7 +128,7 @@ const EmployeeProfile = () => {
           />
           <NavItem
             icon={<FileText size={20} />}
-            label="Báo cáo của tôi"
+            label="Quản lý báo cáo"
             onClick={() => navigate("/employee-reports")}
           />
           <NavItem

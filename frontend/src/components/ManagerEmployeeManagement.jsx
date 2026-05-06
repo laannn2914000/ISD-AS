@@ -259,7 +259,7 @@ const ManagerEmployeeManagement = () => {
           />
           <NavItem
             icon={<UserCheck size={20} />}
-            label="Phê duyệt báo cáo"
+            label="Quản lý báo cáo"
             active={location.pathname === "/manager-reports"}
             onClick={() => navigate("/manager-reports")}
           />
@@ -338,9 +338,7 @@ const ManagerEmployeeManagement = () => {
               Quản lý nhân viên
             </h2>
                        {" "}
-            <p className="text-gray-400 text-sm mt-1.5">
-              Tạo tài khoản và phân quyền cho nhân viên cấp dưới
-            </p>
+           
                      {" "}
           </section>
                              {" "}

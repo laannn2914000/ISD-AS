@@ -151,7 +151,7 @@ const AdminFinanceReportSystem = () => {
           />
           <NavItem
             icon={<UserCheck size={20} />}
-            label="Phê duyệt báo cáo"
+            label="Quản lý báo cáo"
             active={location.pathname === "/report-system"}
             onClick={() => navigate("/report-system")}
           />
@@ -380,23 +380,62 @@ const AdminFinanceReportSystem = () => {
                 Trang {page} trên {totalPages} - {reports.length} báo cáo hiển
                 thị
               </p>
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Trước
-                </button>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() =>
-                    setPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Sau
-                </button>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
+                  >
+                    ←
+                  </button>
+                  {/* Hiển thị các nút số trang */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => {
+                      if (totalPages <= 5) return true;
+                      if (p === 1 || p === totalPages) return true;
+                      if (Math.abs(p - page) <= 1) return true;
+                      return false;
+                    })
+                    .map((p, idx, arr) => (
+                      <div key={p}>
+                        {idx > 0 && arr[idx - 1] !== p - 1 && (
+                          <span className="px-1 text-gray-400">...</span>
+                        )}
+                        <button
+                          onClick={() => setPage(p)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                            page === p
+                              ? "bg-yellow-500 text-white"
+                              : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </div>
+                    ))}
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() =>
+                      setPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
+                  >
+                    →
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max={totalPages}
+                  value={page}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (val >= 1 && val <= totalPages) setPage(val);
+                  }}
+                  className="w-12 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center focus:ring-1 focus:ring-yellow-500 outline-none"
+                  placeholder="Trang"
+                />
               </div>
             </div>
           )}

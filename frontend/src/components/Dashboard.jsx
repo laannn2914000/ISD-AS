@@ -127,7 +127,7 @@ const Dashboard = () => {
           />
           <NavItem
             icon={<UserCheck size={20} />}
-            label="Phê duyệt báo cáo"
+            label="Quản lý báo cáo"
             active={location.pathname === "/report-system"}
             onClick={() => navigate("/report-system")}
           />

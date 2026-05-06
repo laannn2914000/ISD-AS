@@ -43,14 +43,9 @@ const Sidebar = ({ user, setShowLogoutModal }) => {
             path: "/debt",
           },
           {
-            icon: <BarChart3 size={20} />,
-            label: "Báo cáo tài chính",
-            path: "/reports",
-          },
-          {
             icon: <UserCheck size={20} />,
-            label: "Phê duyệt báo cáo",
-            path: "/approvals",
+            label: "Quản lý báo cáo",
+            path: "/report-system",
           },
           {
             icon: <Users size={20} />,
@@ -76,14 +71,9 @@ const Sidebar = ({ user, setShowLogoutModal }) => {
             path: "/documents",
           },
           {
-            icon: <BarChart3 size={20} />,
-            label: "Báo cáo tài chính",
-            path: "/reports",
-          },
-          {
             icon: <UserCheck size={20} />,
-            label: "Phê duyệt báo cáo",
-            path: "/approvals",
+            label: "Quản lý báo cáo",
+            path: "/manager-reports",
           },
           {
             icon: <Settings size={20} />,

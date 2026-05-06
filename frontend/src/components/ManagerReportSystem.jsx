@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   Save,
   Send,
+  Edit,
 } from "lucide-react";
 import ReportDetailModal from "./ReportDetailModal";
 
@@ -206,19 +207,9 @@ const ManagerReportSystem = () => {
           />
           <NavItem
             icon={<FileCheck size={20} />}
-            label="Phê duyệt báo cáo"
+            label="Quản lý báo cáo"
             active={location.pathname === "/manager-reports"}
             onClick={() => navigate("/manager-reports")}
-          />
-          <NavItem
-            icon={<BarChart3 size={20} />}
-            label="Báo cáo tài chính"
-            disabled
-          />
-          <NavItem
-            icon={<FileSearch size={20} />}
-            label="Kiểm soát chứng từ"
-            disabled
           />
           <NavItem icon={<Settings size={20} />} label="Cài đặt" disabled />
         </nav>
@@ -273,11 +264,8 @@ const ManagerReportSystem = () => {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h2 className="text-2xl font-bold text-gray-800">
-                Hệ thống phê duyệt
+                Quản lý báo cáo{" "}
               </h2>
-              <p className="text-gray-400 text-sm mt-1">
-                Cập nhật và xử lý báo cáo từ cấp dưới
-              </p>
             </div>
             <div className="flex gap-4 items-center">
               <button
@@ -379,7 +367,10 @@ const ManagerReportSystem = () => {
                               : report.status === "Rejected" ||
                                   report.status === "rejected"
                                 ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
+                                : report.status === "Draft" ||
+                                    report.status === "draft"
+                                  ? "bg-gray-50 text-gray-600"
+                                  : "bg-orange-50 text-orange-600"
                           }`}
                         >
                           {report.status === "Approved" ||
@@ -388,12 +379,15 @@ const ManagerReportSystem = () => {
                             : report.status === "Rejected" ||
                                 report.status === "rejected"
                               ? "Từ chối"
-                              : "Chờ duyệt"}
+                              : report.status === "Draft" ||
+                                  report.status === "draft"
+                                ? "Nháp"
+                                : "Chờ duyệt"}
                         </span>
                       </td>
                       <td className="p-6 flex justify-center gap-3">
                         <button
-                          className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"
+                          className="p-2 text-gray-500 hover:bg-blue-50 rounded-lg"
                           onClick={() => setSelectedReport(report)}
                         >
                           <Eye size={18} />
@@ -401,18 +395,35 @@ const ManagerReportSystem = () => {
                         {report.creatorName === user.fullName
                           ? report.status !== "Approved" &&
                             report.status !== "approved" && (
-                              <button
-                                onClick={() =>
-                                  setShowConfirmModal({
-                                    show: true,
-                                    type: "Delete",
-                                    id: report._id,
-                                  })
-                                }
-                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                              >
-                                <Trash2 size={18} />
-                              </button>
+                              <>
+                                {(report.status === "Draft" ||
+                                  report.status === "draft" ||
+                                  report.status === "Rejected" ||
+                                  report.status === "rejected") && (
+                                  <button
+                                    onClick={() =>
+                                      navigate(
+                                        `/manager-edit-report/${report._id}`,
+                                      )
+                                    }
+                                    className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"
+                                  >
+                                    <Edit size={18} />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() =>
+                                    setShowConfirmModal({
+                                      show: true,
+                                      type: "Delete",
+                                      id: report._id,
+                                    })
+                                  }
+                                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </>
                             )
                           : report.status === "Submitted" && (
                               <>
@@ -463,23 +474,62 @@ const ManagerReportSystem = () => {
                 Trang {page} trên {totalPages} - {reports.length} báo cáo hiển
                 thị
               </p>
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Trước
-                </button>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() =>
-                    setPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Sau
-                </button>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
+                  >
+                    ←
+                  </button>
+                  {/* Hiển thị các nút số trang */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => {
+                      if (totalPages <= 5) return true;
+                      if (p === 1 || p === totalPages) return true;
+                      if (Math.abs(p - page) <= 1) return true;
+                      return false;
+                    })
+                    .map((p, idx, arr) => (
+                      <div key={p}>
+                        {idx > 0 && arr[idx - 1] !== p - 1 && (
+                          <span className="px-1 text-gray-400">...</span>
+                        )}
+                        <button
+                          onClick={() => setPage(p)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                            page === p
+                              ? "bg-blue-600 text-white"
+                              : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </div>
+                    ))}
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() =>
+                      setPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
+                  >
+                    →
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max={totalPages}
+                  value={page}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (val >= 1 && val <= totalPages) setPage(val);
+                  }}
+                  className="w-12 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center focus:ring-1 focus:ring-blue-600 outline-none"
+                  placeholder="Trang"
+                />
               </div>
             </div>
           )}
@@ -542,10 +592,6 @@ const ManagerReportSystem = () => {
                 <h3 className="text-2xl font-bold text-gray-800">
                   Tạo báo cáo mới
                 </h3>
-                <p className="text-gray-500 text-sm mt-1">
-                  Giao diện tạo báo cáo giống nhân viên, nhưng nằm trong modal
-                  của manager.
-                </p>
               </div>
               <button
                 onClick={() => {
@@ -578,7 +624,7 @@ const ManagerReportSystem = () => {
                     </h4>
                     <p className="text-sm text-gray-500">
                       {step === 1
-                        ? "Chọn mẫu giống trang tạo báo cáo nhân viên."
+                        ? ""
                         : "Hoàn thiện nội dung và gửi phê duyệt."}
                     </p>
                   </div>

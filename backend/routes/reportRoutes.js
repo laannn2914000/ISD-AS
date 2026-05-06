@@ -29,7 +29,7 @@ router.post("/create", async (req, res) => {
   }
 });
 
-// 2. LẤY BÁO CÁO CỦA TÔI (Dùng cho trang "Báo cáo của tôi")
+// 2. LẤY Quản lý báo cáo (Dùng cho trang "Quản lý báo cáo")
 router.get("/my-reports", async (req, res) => {
   try {
     const reports = await Report.find({ creatorId: req.user.id }).sort({
